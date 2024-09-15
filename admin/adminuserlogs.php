@@ -80,6 +80,7 @@ if(isset($_SESSION["logged_in"])){
                     <i class="fal fa-bars me-2"></i>Settings</a></li>
                 <li class=""><a href="../logout.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-box-arrow-left me-2"></i>Logout</a></li>
+
             </ul>
 
             <hr class="h-color mx-2 mt-5">
@@ -90,33 +91,89 @@ if(isset($_SESSION["logged_in"])){
         </div>
 
         <div class="content">
-            <nav class="navbar navbar-expand-md navbar-dark bg-light">
+            <nav class="navbar navbar-expand-md navbar-dark">
                 <div class="container-fluid">
-                    <div class="d-flex justify-content-between d-md-none d-block">
-                     <button class="btn px-1 py-0 open-btn me-2"><i class="fal fa-stream"></i></button>
-                        <a class="navbar-brand fs-4" href="adminindex.php"><span class="bg-dark rounded px-2 py-0 text-white">CL</span></a>
-                       
-                    </div>
-                    <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                        <i class="fal fa-bars"></i>
-                    </button>
-                    <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
-                        <ul class="navbar-nav mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                <a class="nav-link active my-2" aria-current="page"></a>
-                            </li>
-                        </ul>
-
-                    </div>
                 </div>
             </nav>
+
+            <!-- List of User Logs -->
+            <div class="px-3">
+                <div class="row">
+                    <div class="col-sm-2">
+                        <h2 class="fs-5 mt-1 ms-2">User Logs</h2>
+                    </div>
+                    <div class="col input-group mb-3">
+                        <input type="text" class="form-control" id="searchUserInput" placeholder="Search" aria-describedby="button-addon2" oninput="searchUsers()">
+                    </div>
+                </div>
+                
+                <div class="card" style="height: 450px;">
+                    <div class="card-body">
+                        <div class="table-responsive" style="height: 420px;">
+                            <table id="user-table" class="table table-bordered table-hover">
+                                <thead class="table-light" style="position: sticky; top: 0;">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">User ID</th>
+                                        <th scope="col">Log Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="table-group-divider">
+                                <?php
+                                    // Query the database to fetch user data
+                                    $result = $connection->query("SELECT * FROM userlogs ORDER BY logid DESC");
+
+                                    if ($result->num_rows > 0) {
+                                        $count = 1; 
+
+                                        while ($row = $result->fetch_assoc()) {
+                                            echo '<tr>';
+                                            echo '<td>' . $count . '</td>';
+                                            echo '<td>' . $row['userid'] . '</td>';
+                                            echo '<td>' . $row['logtime'] . '</td>';
+                                            echo '</tr>';
+                                            $count++; 
+                                        }
+                                    } else {
+                                        echo '<tr><td colspan="5">No user logs found.</td></tr>';
+                                    }
+                                ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                    <!-- Search results will be displayed here -->
+                <div id="search-results"></div>
+            </div>
+            <!-- End of List of Users -->
         </div>
     
     </div>
 
     <!-- Script -->  
+
+    <script>
+
+        //---------------------------Search Users Results---------------------------//
+        function searchUsers() {
+            const query = document.getElementById("searchUserInput").value;
+            
+            // Make an AJAX request to fetch search results
+            $.ajax({
+                url: 'search_userlogs.php',
+                method: 'POST',
+                data: { query: query },
+                success: function(data) {
+                    // Update the user-table with the search results
+                    $('#user-table tbody').html(data);
+                }
+            });
+        }
+
+    </script>
+
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
