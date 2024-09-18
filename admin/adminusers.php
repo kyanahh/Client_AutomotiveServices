@@ -54,6 +54,12 @@ if(isset($_SESSION["logged_in"])){
                 </li>
 
                 <li>
+                    <a href="adminchats.php" class="text-decoration-none px-3 py-2 d-block">
+                    <i class="bi bi-chat-text me-2"></i>Chats
+                    </a>
+                </li>
+
+                <li>
                     <a href="adminappointments.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-calendar-check me-2"></i>Appointments
                     </a>
@@ -103,6 +109,9 @@ if(isset($_SESSION["logged_in"])){
                     </div>
                     <div class="col input-group mb-3">
                         <input type="text" class="form-control" id="searchUserInput" placeholder="Search" aria-describedby="button-addon2" oninput="searchUsers()">
+                    </div>
+                    <div class="col-sm-1">
+                        <a href="adminaddusers.php" class="btn btn-dark px-4"><i class="bi bi-plus-lg text-white"></i></a>
                     </div>
                 </div>
                 
