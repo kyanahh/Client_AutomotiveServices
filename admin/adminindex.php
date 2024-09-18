@@ -85,11 +85,11 @@ if(isset($_SESSION["logged_in"])){
             <hr class="h-color mx-2 mt-5">
             
             <div class="d-flex align-items-end">
-                <p class="text-white ms-3 fs-6">Logged in as: <?php echo $useremail ?></p>
+                <p class="text-white ms-3 fs-6">Logged in as: <?php echo $useremail ?><br>(Admin)</p>
             </div>
         </div>
 
-        <div class="content">
+        <div class="content bg-light">
             <nav class="navbar navbar-expand-md navbar-dark bg-light">
                 <div class="container-fluid">
                     <div class="d-flex justify-content-between d-md-none d-block">

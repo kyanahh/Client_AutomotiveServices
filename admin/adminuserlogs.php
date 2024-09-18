@@ -86,7 +86,7 @@ if(isset($_SESSION["logged_in"])){
             <hr class="h-color mx-2 mt-5">
             
             <div class="d-flex align-items-end">
-                <p class="text-white ms-3 fs-6">Logged in as: <?php echo $useremail ?></p>
+                <p class="text-white ms-3 fs-6">Logged in as: <?php echo $useremail ?><br>(Admin)</p>
             </div>
         </div>
 
@@ -107,7 +107,7 @@ if(isset($_SESSION["logged_in"])){
                     </div>
                 </div>
                 
-                <div class="card" style="height: 450px;">
+                <div class="card" style="height: 520px;">
                     <div class="card-body">
                         <div class="table-responsive" style="height: 420px;">
                             <table id="user-table" class="table table-bordered table-hover">
