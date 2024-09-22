@@ -25,7 +25,7 @@ if(isset($_SESSION["logged_in"])){
     <title>N.M.A.</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" type="text/css" href="admin.css">
+    <link rel="stylesheet" type="text/css" href="staff.css">
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"/>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
 </head>
@@ -42,38 +42,32 @@ if(isset($_SESSION["logged_in"])){
             <ul class="list-unstyled px-2">
 
                 <li>
-                    <a href="adminindex.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffindex.php" class="text-decoration-none px-3 py-2 d-block">
                         <i class="fal fa-home me-2"></i>Dashboard
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminusers.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffusers.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-person-square me-2"></i>Users
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminchats.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffchats.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-chat-text me-2"></i>Chats
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminappointments.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffappointments.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-calendar-check me-2"></i>Appointments
                     </a>
                 </li>
 
                 <li>
-                    <a href="admintransactions.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="stafftransactions.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-file-earmark-text me-2"></i>Transactions
-                    </a>
-                </li>
-
-                <li>
-                    <a href="adminuserlogs.php" class="text-decoration-none px-3 py-2 d-block">
-                    <i class="bi bi-journal me-2"></i>User Logs
                     </a>
                 </li>
 
@@ -82,7 +76,7 @@ if(isset($_SESSION["logged_in"])){
             <hr class="h-color mx-2">
 
             <ul class="list-unstyled px-2">
-                <li class=""><a href="adminsettings.php" class="text-decoration-none px-3 py-2 d-block">
+                <li class=""><a href="staffsettings.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="fal fa-bars me-2"></i>Settings</a></li>
                 <li class=""><a href="../logout.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-box-arrow-left me-2"></i>Logout</a></li>
@@ -91,7 +85,7 @@ if(isset($_SESSION["logged_in"])){
             <hr class="h-color mx-2 mt-5">
             
             <div class="d-flex align-items-end">
-                <p class="text-white ms-3 fs-6">Logged in as: <?php echo $useremail ?><br>(Admin)</p>
+                <p class="text-white ms-3 fs-6 px-2">Logged in as: <?php echo $useremail ?><br>(Staff)</p>
             </div>
         </div>
 
@@ -111,7 +105,7 @@ if(isset($_SESSION["logged_in"])){
                         <input type="text" class="form-control" id="searchUserInput" placeholder="Search" aria-describedby="button-addon2" oninput="searchUsers()">
                     </div>
                     <div class="col-sm-1">
-                        <a href="adminaddusers.php" class="btn btn-dark px-4"><i class="bi bi-plus-lg text-white"></i></a>
+                        <a href="staffaddusers.php" class="btn btn-dark px-4"><i class="bi bi-plus-lg text-white"></i></a>
                     </div>
                 </div>
                 
@@ -161,7 +155,6 @@ if(isset($_SESSION["logged_in"])){
                                             echo '<td>';
                                             echo '<div class="d-flex justify-content-center">';
                                             echo '<button class="btn btn-primary me-2" onclick="editUser(' . $row['userid'] . ')">Edit</button>';
-                                            echo '<button class="btn btn-danger" onclick="deleteUser(' . $row['userid'] . ')">Delete</button>';
                                             echo '</div>';
                                             echo '</td>';
                                             echo '</tr>';
@@ -180,39 +173,9 @@ if(isset($_SESSION["logged_in"])){
                 <div id="search-results"></div>
             </div>
             <!-- End of List of Users -->
-        </div>
-    </div>
 
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container">
-        <div id="deleteToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                <strong class="me-auto">Notification</strong>
-                <small>Just now</small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-                User deleted successfully.
-            </div>
         </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Are you sure you want to delete this user?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
-            </div>
-            </div>
-        </div>
+    
     </div>
 
     <!-- Toast Notification -->
@@ -233,47 +196,8 @@ if(isset($_SESSION["logged_in"])){
     <script>
         //---------------------------Edit Users---------------------------//
         function editUser(id) {
-            window.location = "adminedituser.php?id=" + id;
+            window.location = "staffedituser.php?id=" + id;
         }
-
-        //---------------------------Delete Users---------------------------//
-        let userIdToDelete = null;
-
-        function deleteUser(id) {
-            userIdToDelete = id; // Store the user ID to delete
-            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            deleteModal.show(); // Show the modal
-        }
-
-        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-            if (userIdToDelete) {
-                $.ajax({
-                    url: 'delete_user.php',
-                    method: 'POST',
-                    data: { userid: userIdToDelete },
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.success) {
-                            showDeleteToast();
-                            setTimeout(function () {
-                                location.reload();
-                            }, 3000); // Wait 3 seconds before refreshing
-                        } else {
-                            alert(response.error);
-                        }
-                    },
-                    error: function () {
-                        alert('Error deleting user');
-                    }
-                });
-            }
-        });
-
-        function showDeleteToast() {
-            const deleteToast = new bootstrap.Toast(document.getElementById('deleteToast'));
-            deleteToast.show();
-        }
-
 
         //---------------------------Search Users Results---------------------------//
         function searchUsers() {

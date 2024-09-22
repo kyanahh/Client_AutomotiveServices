@@ -2,7 +2,7 @@
 
 session_start();
 
-require("../server/connection.php");   
+require("../server/connection.php");
 
 if(isset($_SESSION["logged_in"])){
     if(isset($_SESSION["firstname"]) || isset($_SESSION["email"])){
@@ -15,44 +15,75 @@ if(isset($_SESSION["logged_in"])){
     $textaccount = "Account";
 }
 
-$firstname = $lastname = $phone = $gender = $email = $bday =  $usertype = $password = $errorMessage = $successMessage = "";
+$firstname = $lastname = $phone = $gender = $email = $bday = $ut = $newpassword 
+= $errorMessage = $successMessage = "";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $firstname =  ucwords($_POST["firstname"]);
-    $lastname =  ucwords($_POST["lastname"]);
-    $phone = $_POST["phone"];
-    $gender = $_POST["gender"];
-    $email = $_POST["email"];
-    $password = $_POST["password"];
-    $bday = $_POST["bday"];
-    $usertype = $_POST["usertype"];
+if (isset($_GET["id"])) {
+    $id = $_GET["id"];
 
-    if (empty($firstname) || empty($lastname) || empty($phone) || empty($gender) || empty($email) || 
-    empty($password)) {
-        $errorMessage = "All fields are required";
+    $query = "SELECT * FROM users WHERE userid = '$id'";
+
+    $res = $connection->query($query);
+
+    if ($res && $res->num_rows > 0) {
+        $row = $res->fetch_assoc();
+
+        $userid1 = $row["userid"];
+        $firstname = $row["firstname"];
+        $lastname = $row["lastname"];
+        $phone = $row["phone"];
+        $gender = $row["gender"];
+        $email = $row["email"];
+        $bday = $row["bday"];
+        $ut = $row["usertypeid"];
+
+        $gender = $row["gender"] == 1 ? "Male" : "Female";
     } else {
-        // Check if the email already exists in the database
-        $emailExistsQuery = "SELECT * FROM users WHERE email = '$email'";
-        $emailExistsResult = $connection->query($emailExistsQuery);
-
-        if ($emailExistsResult->num_rows > 0) {
-            $errorMessage = "User already exists";
-            $firstname = $lastname = $phone = $gender = $email = $password = "";
-        } else {
-            // Insert the user data into the database
-            $insertQuery = "INSERT INTO users (firstname, lastname, phone, gender, bday, email, 
-            password, usertypeid) VALUES ('$firstname', '$lastname', '$phone', '$gender', '$bday', 
-            '$email', '$password', '$usertype')";
-            $result = $connection->query($insertQuery);
-
-            if (!$result) {
-                $errorMessage = "Invalid query " . $connection->error;
-            } else {
-                $firstname = $lastname = $phone = $gender = $email = $password = "";
-                $errorMessage = "Account successfully created";
-            }
-        }
+        $errorMessage = "User not found.";
     }
+} else {
+    $errorMessage = "User ID is missing.";
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($id)) {
+    $firstname = $_POST["firstname"];
+    $lastname = $_POST["lastname"];
+    $phone = $_POST["phone"];
+    $email = $_POST["email"];
+    $bday = $_POST["bday"];
+    $gender = $_POST["gender"];
+    $ut = $_POST["ut"];
+    $newpassword = $_POST["newpassword"];
+
+    // Base update query
+    $query1 = "UPDATE users 
+               SET 
+                   firstname = '$firstname', 
+                   lastname = '$lastname', 
+                   phone = '$phone', 
+                   email = '$email', 
+                   bday = '$bday', 
+                   gender = '$gender', 
+                   usertypeid = '$ut'";
+
+    // Append password to query only if it's provided
+    if (!empty($newpassword)) {
+        $query1 .= ", password = '$newpassword'";
+    }
+
+    $query1 .= " WHERE userid = '$id'";
+
+    $result = $connection->query($query1);
+
+    if ($result) {
+        // Set a session variable for success
+        $_SESSION['update_success'] = true;
+        header("Location: staffusers.php"); // Redirect to adminusers.php
+        exit;
+    } else {
+        $errorMessage1 = "Error updating details";
+    }
+    
 }
 
 ?>
@@ -65,7 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>N.M.A.</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" type="text/css" href="admin.css">
+    <link rel="stylesheet" type="text/css" href="staff.css">
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"/>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
 </head>
@@ -82,38 +113,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <ul class="list-unstyled px-2">
 
                 <li>
-                    <a href="adminindex.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffindex.php" class="text-decoration-none px-3 py-2 d-block">
                         <i class="fal fa-home me-2"></i>Dashboard
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminusers.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffusers.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-person-square me-2"></i>Users
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminchats.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffchats.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-chat-text me-2"></i>Chats
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminappointments.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffappointments.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-calendar-check me-2"></i>Appointments
                     </a>
                 </li>
 
                 <li>
-                    <a href="admintransactions.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="stafftransactions.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-file-earmark-text me-2"></i>Transactions
-                    </a>
-                </li>
-
-                <li>
-                    <a href="adminuserlogs.php" class="text-decoration-none px-3 py-2 d-block">
-                    <i class="bi bi-journal me-2"></i>User Logs
                     </a>
                 </li>
 
@@ -122,7 +147,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <hr class="h-color mx-2">
 
             <ul class="list-unstyled px-2">
-                <li class=""><a href="adminsettings.php" class="text-decoration-none px-3 py-2 d-block">
+                <li class=""><a href="staffsettings.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="fal fa-bars me-2"></i>Settings</a></li>
                 <li class=""><a href="../logout.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-box-arrow-left me-2"></i>Logout</a></li>
@@ -131,7 +156,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <hr class="h-color mx-2 mt-5">
             
             <div class="d-flex align-items-end">
-                <p class="text-white ms-3 fs-6">Logged in as: <?php echo $useremail ?><br>(Admin)</p>
+                <p class="text-white ms-3 fs-6 px-2">Logged in as: <?php echo $useremail ?><br>(Staff)</p>
             </div>
         </div>
 
@@ -141,12 +166,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             </nav>
 
-            <!-- Add Users -->
+            <!-- Edit Users -->
             <div class="px-3 pt-4">
                 <form method="POST" action="<?php htmlspecialchars("SELF_PHP"); ?>">
 
                     <div class="row ms-1 mt-1">
-                        <h2 class="fs-5">Add New User</h2>
+                        <h2 class="fs-5">Edit User</h2>
                     </div>
 
                     <div class="row">
@@ -175,7 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <label class="form-label mt-2 px-3">Last Name<span class="text-danger">*</span></label>
                         </div>
                         <div class="col-sm-4">
-                            <input type="text" class="form-control" name="lastname" id="lastname" value="<?php echo $lastname; ?>" placeholder="Enter last name" required>
+                            <input type="text" class="form-control" name="lastname" id="lastname" value="<?php echo $lastname; ?>" placeholder="Enter first name" required>
                         </div>
                     </div>
 
@@ -207,29 +232,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="col-sm-4">
                             <select id="gender" name="gender" class="form-select" required>
                                 <option value="" disabled selected>Select Gender</option>
-                                <option value="1" <?php echo ($gender === 1) ? "selected" : ""; ?>>Male</option>
-                                <option value="2" <?php echo ($gender === 2) ? "selected" : ""; ?>>Female</option>
-                            </select>
+                                <option value="1" <?php echo ($gender === "Male") ? "selected" : ""; ?>>Male</option>
+                                <option value="2" <?php echo ($gender === "Female") ? "selected" : ""; ?>>Female</option>
+                                </select>
                         </div>
                     </div>
 
                     <div class="row mb-3 mt-2">
                         <div class="col-sm-2">
-                            <label class="form-label mt-2 px-3">Password<span class="text-danger">*</span></label>
+                            <label class="form-label mt-2 px-3">New Password</label>
                         </div>
                         <div class="col-sm-4">
-                            <input type="password" class="form-control" name="password" id="password" value="<?php echo $password; ?>" placeholder="Enter password" required>
+                            <input type="password" class="form-control" name="newpassword" id="newpassword" value="<?php echo $newpassword; ?>" placeholder="Enter new password">
                         </div>
                         <div class="col-sm-2">
                             <label class="form-label mt-2 px-3">User Type<span class="text-danger">*</span></label>
                         </div>
                         <div class="col-sm-4">
-                            <select id="usertype" name="usertype" class="form-select" required>
+                            <select id="ut" name="ut" class="form-select" required>
                                 <option value="" disabled selected>Select User Type</option>
-                                <option value="1" <?php echo ($usertype === 1) ? "selected" : ""; ?>>Admin</option>
-                                <option value="2" <?php echo ($usertype === 2) ? "selected" : ""; ?>>Staff</option>
-                                <option value="3" <?php echo ($usertype === 3) ? "selected" : ""; ?>>Client</option>
-                                <option value="4" <?php echo ($usertype === 4) ? "selected" : ""; ?>>Guest</option>
+                                <option value="1" <?php echo ($ut == 1) ? "selected" : ""; ?>>Admin</option>
+                                <option value="2" <?php echo ($ut == 2) ? "selected" : ""; ?>>Staff</option>
+                                <option value="3" <?php echo ($ut == 3) ? "selected" : ""; ?>>Client</option>
+                                <option value="4" <?php echo ($ut == 4) ? "selected" : ""; ?>>Guest</option>
                             </select>
                         </div>
                     </div>
@@ -242,7 +267,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </form>
 
             </div>
-            <!-- End of Add Users -->
+            <!-- End of Edit Users -->
 
         </div>
     

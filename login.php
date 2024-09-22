@@ -8,8 +8,10 @@ if (isset($_POST["email"]) && isset($_POST["password"])) {
     $email = $_POST["email"];
     $password = $_POST["password"];
 
-    $result = $connection->query("SELECT users.*, gender.gendertype as gender FROM users INNER JOIN 
-    gender on users.gender = gender.genderid WHERE email = '$email' AND password = '$password'");
+    $result = $connection->query("SELECT users.*, gender.gendertype as gender, usertype.usertypename 
+    as ut  FROM ((users INNER JOIN gender on users.gender = gender.genderid) 
+    INNER JOIN usertype on users.usertypeid = usertype.usertypeid) 
+    WHERE email = '$email' AND password = '$password'");
 
     if ($result->num_rows === 1) {
         $record = $result->fetch_assoc();
@@ -25,6 +27,7 @@ if (isset($_POST["email"]) && isset($_POST["password"])) {
         $_SESSION["gender"] = $record["gender"];
         $_SESSION["gendername"] = $record["gendername"];
         $_SESSION["email"] = $record["email"];
+        $_SESSION["ut"] = $record["ut"];
         $_SESSION["logged_in"] = true;
 
         $userid = $record["userid"];
