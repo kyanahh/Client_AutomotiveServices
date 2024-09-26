@@ -134,9 +134,11 @@ if(isset($_SESSION["logged_in"])){
                                 <tbody class="table-group-divider">
                                 <?php
                                     // Query the database to fetch user data
-                                    $result = $connection->query("SELECT appointments.userid, users.firstname, users.lastname, 
-                                    appointments.araw, appointments.oras, appointments.stats, appointments.appcreated FROM appointments 
-                                    INNER JOIN users on appointments.userid = users.userid ORDER BY appcreated DESC");
+                                    $result = $connection->query("SELECT appointments.appid, appointments.userid, users.firstname, users.lastname, 
+                                    appointments.araw, appointments.oras, stats.statsname, appointments.appcreated FROM ((appointments 
+                                    INNER JOIN users on appointments.userid = users.userid) 
+                                    INNER JOIN stats on appointments.statsid = stats.statsid) 
+                                    ORDER BY appcreated DESC");
 
                                     if ($result->num_rows > 0) {
                                         $count = 1; 
@@ -146,23 +148,22 @@ if(isset($_SESSION["logged_in"])){
                                             echo '<td>' . $count . '</td>';
                                             echo '<td>' . $row['userid'] . '</td>';
                                             echo '<td>' . $row['firstname'] . ' ' . $row['lastname'] . '</td>';
-                                            echo '<td>' . $row['categoryname'] . '</td>';
                                             // Format the date
                                             $dateObject = new DateTime($row['araw']);
                                             $formattedDate = $dateObject->format('F j, Y');
                                             echo '<td>' . $formattedDate . '</td>';
                                             echo '<td>' . $row['oras'] . '</td>';
-                                            echo '<td>' . $row['stats'] . '</td>';
+                                            echo '<td>' . $row['statsname'] . '</td>';
                                             echo '<td>' . $row['appcreated'] . '</td>';
                                             echo '<td>';
                                             echo '<div class="d-flex justify-content-center">';
-                                            if ($row['status'] == 'Pending') {
-                                                echo '<button class="btn btn-success me-2" onclick="confirmAppointment(' . $row['id'] . ')">Confirm</button>';
-                                                echo '<button class="btn btn-danger me-2" onclick="cancelAppointment(' . $row['id'] . ')">Cancel</button>';
+                                            if ($row['statsname'] == 'Pending') {
+                                                echo '<button class="btn btn-success me-2" onclick="openConfirmModal(' . $row['appid'] . ')">Confirm</button>';
+                                                echo '<button class="btn btn-danger me-2" onclick="cancelAppointment(' . $row['appid'] . ')">Cancel</button>';
 
                                             }
-                                            echo '<button class="btn btn-primary me-2" onclick="editAppointment(' . $row['id'] . ')">Edit</button>';
-                                            echo '<button class="btn btn-danger" onclick="deleteAppointment(' . $row['id'] . ')">Delete</button>';
+                                            echo '<button class="btn btn-primary me-2" onclick="editAppointment(' . $row['appid'] . ')">Edit</button>';
+                                            echo '<button class="btn btn-danger" onclick="deleteAppointment(' . $row['appid'] . ')">Delete</button>';
                                             echo '</div>';
                                             echo '</td>';
                                             echo '</tr>';
@@ -181,6 +182,37 @@ if(isset($_SESSION["logged_in"])){
                 <div id="search-results"></div>
             </div>
             <!-- End of List of Appointments -->
+
+            <!-- Confirmation Modal -->
+            <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="confirmModalLabel">Confirm Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to confirm this appointment?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" id="confirmButton">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast Notification -->
+            <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
+                <div id="liveToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body" id="toastMessage">
+                            Appointment confirmed successfully!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
 
         </div>
     
@@ -202,6 +234,109 @@ if(isset($_SESSION["logged_in"])){
                 $('#appointment-table-body').html(data);
             }
         })};
+
+    //---------------------------Confirm Appointment---------------------------//
+        // JavaScript code for modal and toast handling
+        let appointmentIdToConfirm = null;
+
+        // Function to open the confirmation modal
+        function openConfirmModal(appid) {
+            console.log("Opening modal for appointment ID:", appid); // Debugging log
+            appointmentIdToConfirm = appid;
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        }
+
+        // Event listener for the confirmation button
+        document.getElementById('confirmButton').addEventListener('click', function () {
+            if (appointmentIdToConfirm) {
+                $.ajax({
+                    url: "confirm_appointment.php",
+                    method: "POST",
+                    data: { appointmentId: appointmentIdToConfirm },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            // Display the success toast
+                            showToast(response.success, "bg-success");
+                            setTimeout(() => location.reload(), 2000); // Optional delay before reload
+                        } else {
+                            // Display an error toast
+                            showToast(response.error, "bg-danger");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle errors from the AJAX request
+                        showToast('Error confirming the appointment', 'bg-danger');
+                    }
+                });
+            }
+        });
+
+        // Function to display the toast
+        function showToast(message, className) {
+            // Get the toast elements
+            const toastMessage = document.getElementById('toastMessage');
+            const toastElement = document.getElementById('liveToast');
+
+            // Update the toast message and class
+            toastMessage.textContent = message;
+            toastElement.className = `toast align-items-center text-white ${className} border-0`;
+
+            // Initialize and show the toast
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+        }
+
+
+        //---------------------------Edit Appointment---------------------------//
+        function editAppointment(appid) {
+            window.location = "admineditappointment.php?id=" + appid;
+        }
+
+
+        //---------------------------Delete Appointment ---------------------------//
+        const deleteAppointment = (appid) => {
+
+            $.ajax({
+                method: "POST",
+                url: "deleteappointment.php",
+                data: {id: id},
+                success: function(res) {
+
+                    
+                    alert("Appointment deleted successfully");
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    
+                    console.error(error);
+                    alert("Error deleting appointment");
+                }
+            });
+        }
+
+        //---------------------------Cancel Appointment---------------------------//
+        function cancelAppointment(appid) {
+            const canAppointment = confirm("Are you sure you want to cancel this appointment?");
+
+            if (canAppointment) {
+                $.ajax({
+                    url: "cancel_appointment.php",
+                    method: "POST",
+                    data: { appointmentId: appid },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.success);
+                            location.reload();
+                        } else {
+                            alert(response.error);
+                        }
+                    }
+                })
+            }
+        }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
