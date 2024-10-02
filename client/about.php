@@ -61,10 +61,17 @@ if(isset($_SESSION["logged_in"])){
         </div>
       </nav>
 
-      <div class="container-fluid bg-image p-5 text-center mt-3 text-white" style="background-image: url(../img/car.png);">
-        <h1 class="fs-6 mt-5 pt-5">WELCOME TO</h1>
-        <h1 class="display-2 fw-bold" style="font-family: Times New Roman, serf;">N.M.A. AUTOMOTIVE SUSPENSION SERVICES CENTER</h1>
-    </div>
+      <div class="container-fluid mt-5 pt-3 d-flex justify-content-center">
+        <div class="card col-sm-8 p-4">
+            <h5>About NMA Automotive Suspension Service Center</h5>
+            <div class="d-flex justify-content-center mt-3">
+                <img class="w-25" src="../img/owner.jpg" alt="Owner">
+            </div>
+            <p class="mt-3">NMA Automotive Suspension Service Center was founded by Nelson M. Alimurong and has been a trusted name in automotive care since March 1, 1995—the same day the city of Muntinlupa celebrated its transition to municipal status. With nearly three decades of experience, we take pride in being specialists in automotive suspension systems, focusing on the repair and replacement of underchassis parts.</p>
+            <p class="mt-3">Our expertise covers a wide range of suspension-related services, ensuring that each vehicle we service performs optimally and safely on the road. At NMA Automotive Suspension Service Center, we are dedicated to providing top-tier solutions that improve ride comfort, vehicle stability, and overall driving performance.</p>
+            <p class="mt-3">Whether you're in need of routine maintenance or extensive repairs, our team of skilled technicians is committed to delivering high-quality service with integrity and precision. We believe that attention to detail and customer satisfaction are the keys to long-term trust, and we continue to uphold these values in every job we undertake.</p>
+        </div>
+      </div>
 
     <!-- Script -->  
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
