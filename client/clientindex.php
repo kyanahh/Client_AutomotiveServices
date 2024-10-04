@@ -2,6 +2,8 @@
 
 session_start();
 
+require("../server/connection.php");
+
 if(isset($_SESSION["logged_in"])){
     if(isset($_SESSION["firstname"])){
         $textaccount = $_SESSION["firstname"];
@@ -47,9 +49,9 @@ if(isset($_SESSION["logged_in"])){
                         Account
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
-                        <li><a class="dropdown-item" href="#">Appointments</a></li>
-                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li><a class="dropdown-item" href="profile.php">Profile</a></li>
+                        <li><a class="dropdown-item" href="appointments.php">Appointments</a></li>
+                        <li><a class="dropdown-item" href="settings.php">Settings</a></li>
                         <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item">Hello, <?php echo $textaccount?></a></li>
@@ -61,9 +63,49 @@ if(isset($_SESSION["logged_in"])){
         </div>
       </nav>
 
-      <div class="container-fluid bg-image p-5 text-center mt-3 text-white" style="background-image: url(../img/car.png);">
-        <h1 class="fs-6 mt-5 pt-5">WELCOME TO</h1>
-        <h1 class="display-2 fw-bold" style="font-family: Times New Roman, serf;">N.M.A. AUTOMOTIVE SUSPENSION SERVICES CENTER</h1>
+      <div id="homepagecarousel" class="carousel slide align-items-center" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#homepagecarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#homepagecarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#homepagecarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        </div>
+        <div class="carousel-inner">
+          <div class="carousel-item active c-item">
+            <img src="../img/fixing0.png" class="d-block c-img" alt="NMA" style="height: 85vh; background-size: cover;
+            width: 100%;">
+            <div class="carousel-caption top-0 mt-5">
+                <p class="fs-4 text-uppercase pt-5">Need reliable automotive services?</p>
+                <h1 class="display-5 fw-bolder text-capitalize mt-5">N.M.A. AUTOMOTIVE SUSPENSION SERVICES CENTER</h1>
+                <a href="signup.php" class="btn btn-light fw-bold mx-auto fs-5 px-4 py-2 mt-5">Book Now</a>
+            </div>
+          </div>
+          <div class="carousel-item c-item">
+            <img src="../img/things.png" class="d-block c-img" alt="NMA" style="height: 85vh; background-size: cover;
+            width: 100%;">
+            <div class="carousel-caption top-0 mt-5">
+                <p class="fs-4 text-uppercase pt-5">Want your car expertly fixed?</p>
+                <h1 class="fw-bold text-capitalize mt-4">Drive with confidence—get your car serviced by the experts today!</h1>
+                <a href="signup.php" class="btn btn-light fw-bold mx-auto fs-5 px-4 py-2 mt-5">Book Now</a>
+            </div>
+          </div>
+          <div class="carousel-item c-item">
+            <img src="../img/shop.png" class="d-block c-img" alt="NMA" style="height: 85vh; background-size: cover;
+            width: 100%;">
+            <div class="carousel-caption top-0 mt-5 pt-5">
+                <p class="fs-4 text-uppercase pt-5">8am to 5pm</p>
+                <h1 class="display-4 fw-bold text-capitalize mt-4">Monday to Saturday</h1>
+                <a href="signup.php" class="btn btn-light fw-bold mx-auto fs-5 px-4 py-2 mt-5">Book Now</a>
+            </div>
+          </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#homepagecarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#homepagecarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
     </div>
 
     <!-- Script -->  

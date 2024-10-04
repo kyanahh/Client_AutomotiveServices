@@ -2,6 +2,8 @@
 
 session_start();
 
+require("../server/connection.php");
+
 if(isset($_SESSION["logged_in"])){
     if(isset($_SESSION["firstname"])){
         $textaccount = $_SESSION["firstname"];
@@ -47,9 +49,9 @@ if(isset($_SESSION["logged_in"])){
                         Account
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
-                        <li><a class="dropdown-item" href="#">Appointments</a></li>
-                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li><a class="dropdown-item" href="profile.php">Profile</a></li>
+                        <li><a class="dropdown-item" href="appointments.php">Appointments</a></li>
+                        <li><a class="dropdown-item" href="settings.php">Settings</a></li>
                         <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item">Hello, <?php echo $textaccount?></a></li>
