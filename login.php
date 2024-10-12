@@ -27,6 +27,7 @@ if (isset($_POST["email"]) && isset($_POST["password"])) {
         $_SESSION["gender"] = $record["gender"];
         $_SESSION["gendername"] = $record["gendername"];
         $_SESSION["email"] = $record["email"];
+        $_SESSION["bday"] = $record["bday"];
         $_SESSION["ut"] = $record["ut"];
         $_SESSION["logged_in"] = true;
 

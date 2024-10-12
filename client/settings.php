@@ -1,17 +1,23 @@
 <?php
 
 session_start();
-
 require("../server/connection.php");
 
-if(isset($_SESSION["logged_in"])){
-    if(isset($_SESSION["firstname"])){
+if (isset($_SESSION["logged_in"])) {
+    if (isset($_SESSION["firstname"])) {
         $textaccount = $_SESSION["firstname"];
         $useremail = $_SESSION["email"];
-    }else{
+        $firstname = $_SESSION["firstname"];
+        $lastname = $_SESSION["lastname"];
+        $email = $_SESSION["email"];
+        $bday = $_SESSION["bday"];
+        $gender = $_SESSION["gender"];
+        $gendername = $_SESSION["gendername"];
+        $phone = $_SESSION["phone"];
+    } else {
         $textaccount = "Account";
     }
-}else{
+} else {
     $textaccount = "Account";
 }
 
@@ -19,20 +25,48 @@ $errorMessage = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $useremail = $_SESSION["email"];
+    $lastname = $_POST["lastname"];
+    $newEmail = $_POST["email"];
     $oldpass = $_POST["oldpass"];
     $newpass = $_POST["newpass"];
-    $result = $connection->query("SELECT password FROM users WHERE email = '$useremail'");
-    $record = $result->fetch_assoc();
-    $stored_password = $record["password"];
-    
-    if ($oldpass == $stored_password) {
-        $connection->query("UPDATE users SET password = '$newpass' WHERE email = '$useremail'");
-        $_SESSION['update_success'] = "Password changed successfully"; // Set success message
-    } else {
-        $_SESSION['error_message'] = "Old password does not match"; // Set error message
-    }
-}
 
+    // Update email and lastname regardless of password changes
+    $updateQuery = "UPDATE users SET email = ?, lastname = ? WHERE email = ?";
+    $stmt = $connection->prepare($updateQuery);
+    $stmt->bind_param("sss", $newEmail, $lastname, $useremail);
+    $stmt->execute();
+
+    // If oldpass and newpass are provided, validate and update password
+    if (!empty($oldpass) && !empty($newpass)) {
+        $result = $connection->query("SELECT password FROM users WHERE email = '$useremail'");
+        $record = $result->fetch_assoc();
+        $stored_password = $record["password"];
+
+        if ($oldpass === $stored_password) {
+            $updatePasswordQuery = "UPDATE users SET password = ? WHERE email = ?";
+            $stmt = $connection->prepare($updatePasswordQuery);
+            $stmt->bind_param("ss", $newpass, $useremail);
+            $stmt->execute();
+
+            $_SESSION['update_success'] = "Password changed successfully";
+        } else {
+            $_SESSION['error_message'] = "Old password does not match.";
+        }
+    } else {
+        $_SESSION['update_success'] = "Profile updated successfully (without password change).";
+    }
+
+    // Refresh session variables with updated user data
+    $result = $connection->query("SELECT * FROM users WHERE email = '$newEmail'");
+    if ($result->num_rows > 0) {
+        $updatedUser = $result->fetch_assoc();
+        $_SESSION["lastname"] = $updatedUser["lastname"];
+        $_SESSION["email"] = $updatedUser["email"];
+    }
+
+    header("Location: settings.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -82,68 +116,127 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
       </nav>
 
-        <div class="d-flex justify-content-center">
-            <div class="card p-3 mt-5">
-                      <!-- Settings -->
-                        <div class="px-3 pt-4">                
-                            <form method="POST" action="<?php htmlspecialchars("SELF_PHP"); ?>">
+        <div class="container-fluid mx-auto">
+          <form method="POST" action="<?php htmlspecialchars("SELF_PHP"); ?>">
 
-                            <div class="rows">
-                                <h2 class="fs-5">Settings</h2>
-                            </div>
+            <!-- Profile -->
+            <div class="card col-sm-8 p-3 mt-5 mx-auto">
+                <div class="px-3 pt-3">
+                    <div class="row">
+                        <h2 class="fs-5">Profile</h2>
+                    </div>
 
-                            <div class="ms-2 col-sm-7">
-                                <?php
-                                    if (!empty($errorMessage)) {
-                                        echo "
-                                        <div class='alert alert-warning alert-dismissible fade show mt-2 ms-4' role='alert'>
-                                        <strong>$errorMessage</strong>
-                                        <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
-                                        </div>
-                                        ";
-                                    }
-                                ?>
-                            </div>
-                                        
-                            <div class="row mb-3 mt-2">
-                                <div class="col-sm-4">
-                                    <label class="form-label mt-2 px-3">Old Password</label>
-                                </div>
-                                <div class="col">
-                                    <input type="password" class="form-control" name="oldpass" id="oldpass" placeholder="Enter old password" required>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3 mt-2">
-                                <div class="col-sm-4">
-                                    <label class="form-label mt-2 px-3">New Password</label>
-                                </div>
-                                <div class="col">
-                                    <input type="password" class="form-control" name="newpass" id="newpass" placeholder="Enter new password" required>
-                                </div>
-                            </div>
-
-                            <!-- Show Password Checkbox -->
-                            <div class="row mb-3 ms-5 ps-5">
-                                <div class="col-sm-5 ms-5 ps-5">
-                                    <input class="ms-3" type="checkbox" id="showPassword" onclick="togglePassword()"> Show Password
-                                </div>
-                            </div>
-
-                            <div class="row mb-3 mt-2">
-                                <div class="col-sm-8">
-                                    <button type="submit" class="btn btn-dark px-5" style="margin-left: 455px;">Save</button>
-                                </div>
-                            </div>
-
-                            </form>
-
+                    <div class="row mb-3 mt-2">
+                        <div class="col-sm-3">
+                            <label class="form-label mt-2 px-3">First Name</label>
                         </div>
-                        <!-- End of Settings -->
+                        <div class="col">
+                            <input type="text" class="form-control" name="firstname" id="firstname" value="<?php echo $firstname; ?>" disabled>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 mt-2">
+                        <div class="col-sm-3">
+                            <label class="form-label mt-2 px-3">Last Name</label>
+                        </div>
+                        <div class="col">
+                            <input type="text" class="form-control" name="lastname" id="lastname" value="<?php echo $lastname; ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 mt-2">
+                        <div class="col-sm-3">
+                            <label class="form-label mt-2 px-3">Email Address</label>
+                        </div>
+                        <div class="col">
+                            <input type="email" class="form-control" name="email" id="email" value="<?php echo $email; ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 mt-2">
+                        <div class="col-sm-3">
+                            <label class="form-label mt-2 px-3">Gender</label>
+                        </div>
+                        <div class="col">
+                            <input type="text" class="form-control" name="gender" id="gender" value="<?php echo $gender; ?>" disabled>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 mt-2">
+                        <div class="col-sm-3">
+                            <label class="form-label mt-2 px-3">Birthday</label>
+                        </div>
+                        <div class="col">
+                            <input type="text" class="form-control" name="bday" id="bday" value="<?php echo $bday; ?>" disabled>
+                        </div>
+                    </div>
+
+                </div>
             </div>
+            <!-- End of Profile --> 
+
+            <!-- Password -->
+            <div class="card col-sm-8 p-3 mt-3 mx-auto">
+                <div class="px-3 pt-3">
+                    <div class="row">
+                        <h2 class="fs-5">Password</h2>
+                    </div>
+                                        
+                <div class="row mb-3 mt-2">
+                    <div class="col-sm-3">
+                        <label class="form-label mt-2 px-3">Old Password</label>
+                    </div>
+                    <div class="col">
+                        <input type="password" class="form-control" name="oldpass" id="oldpass" placeholder="Enter old password">
+                    </div>
+                </div>
+
+                <div class="row mb-3 mt-2">
+                    <div class="col-sm-3">
+                        <label class="form-label mt-2 px-3">New Password</label>
+                    </div>
+                    <div class="col">
+                        <input type="password" class="form-control" name="newpass" id="newpass" placeholder="Enter new password">
+                    </div>
+                </div>
+
+                <!-- Show Password Checkbox -->
+                <div class="row mt-2">
+                    <div class="col-sm-3">
+                        <label class="form-label mt-2 px-3 text-white">Show Password</label>
+                    </div>
+                    <div class="col">
+                        <input type="checkbox" id="showPassword" onclick="togglePassword()"> Show Password
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-3">
+                        <label class="form-label px-3 text-white">Warning</label>
+                    </div>
+                    <div class="col">
+                        <p><span class="fw-bold">Password strength:</span><br> Use at least 8 characters. Don’t use a password from another site, or something too obvious like your pet’s name.</p>
+                    </div>
+                </div>
+
+                </div>
+            </div>
+            <!-- End of Password -->
+
+            <!-- Save Button -->
+            <div class="card col-sm-8 p-3 mt-3 mx-auto mb-5">
+                <div class="px-3">
+                    <div class="row">
+                        <button type="submit" class="btn btn-dark px-5">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+            <!-- End of Save Button -->
+
+            </form>
         </div>
 
-        <!-- Toast Notification -->
+    <!-- Toast Notification -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
