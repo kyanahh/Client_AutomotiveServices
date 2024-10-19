@@ -22,7 +22,6 @@ if (isset($_POST['query'])) {
                 OR users.phone LIKE '%$query%' 
                 OR usertype.usertypename LIKE '%$query%')";
     } else {
-        // If the query is empty, retrieve all records where usertypeid = 1
         $sql = "SELECT users.userid, users.firstname, 
                        users.lastname, users.email, DATE_FORMAT(users.bday, '%M %d, %Y') AS bday,
                        gender.gendertype as gender, users.phone, 

@@ -1,50 +1,43 @@
 <?php
 
-// Include your database connection file
 require("../server/connection.php");
 
 // Get the selected date from the POST request
 $date = isset($_POST['date']) ? $_POST['date'] : null;
 
-// Check if the date is valid and not empty
 if (!empty($date)) {
-    // Call a function to get available times based on the selected date
     $availableTimes = getAvailableTimes($date);
-
-    // Output the HTML for the available times
-
     echo json_encode($availableTimes);
 } else {
-    // Handle the case where the date is not valid or empty
-    echo '<div class="alert alert-danger" role="alert">Invalid date</div>';
+    echo json_encode(['error' => 'Invalid date']);
 }
 
-// Close the database connection if needed
 $connection->close();
 
-// Function to get available times from the database based on the selected date
 function getAvailableTimes($date) {
-    // Modify this function based on your database structure and query logic
-    global $connection; // Assuming $connection is your database connection object
+    global $connection;
 
-    $query = "SELECT oras FROM appointments WHERE araw = ?";
+    // Query to fetch only non-cancelled bookings (statsid != 5) for the selected date
+    $query = "SELECT oras FROM appointments WHERE araw = ? AND statsid != 5";
     $stmt = $connection->prepare($query);
     $stmt->bind_param("s", $date);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    $bookedTimes = array();
+    $bookedTimes = [];
     while ($row = $result->fetch_assoc()) {
-        $bookedTimes[] = $row['oras'];
+        // Store booked times in the format "h:i A - h:i A"
+        $bookedTimes[] = trim($row['oras']); // Match this with the generated format
     }
 
-    // Generate an array of available times (you may need to adjust this based on your logic)
+    // Generate available time slots from 8:00 AM to 5:00 PM (in 1-hour intervals)
     $allTimes = [];
-    for ($i = 8; $i <= 16; $i++) {
-        $startHour = $i;
-        $endHour = $i + 1;
-        $timeSlot = sprintf("%02d:00-%02d:00", $startHour, $endHour);
+    for ($i = 8; $i < 17; $i++) {
+        $startTime = DateTime::createFromFormat('H', $i)->format('h:i A');
+        $endTime = DateTime::createFromFormat('H', $i + 1)->format('h:i A');
+        $timeSlot = "$startTime - $endTime";
 
+        // Add the time slot if it's not already booked
         if (!in_array($timeSlot, $bookedTimes)) {
             $allTimes[] = $timeSlot;
         }
@@ -52,4 +45,5 @@ function getAvailableTimes($date) {
 
     return $allTimes;
 }
+
 ?>

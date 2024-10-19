@@ -15,26 +15,27 @@ if(isset($_SESSION["logged_in"])){
     $textaccount = "Account";
 }
 
-$query = "SELECT oras FROM appointments";
-
+// Booked times from the database
+$query = "SELECT oras, araw FROM appointments WHERE statsid != 5"; // Get only non-cancelled appointments
 $result = $connection->query($query);
 
-$bookedTimes = array();
-
+$bookedTimesByDate = [];
 while ($row = $result->fetch_assoc()) {
-    $bookedTimes[] = $row['oras'];
+    $bookedTimesByDate[$row['araw']][] = trim($row['oras']);
 }
 
 $userid = $date = $time = $status = $errorMessage = "";
 
-$allTimes = [];
-for ($i = 8; $i <= 16; $i++) {
-    $startHour = $i;
-    $endHour = $i + 1;
-    
-    $timeSlot = sprintf("%02d:00-%02d:00", $startHour, $endHour);
+$selectedDate = isset($_POST['date']) ? $_POST['date'] : null;
 
-    if (!in_array($timeSlot, $bookedTimes)) {
+$allTimes = [];
+for ($i = 8; $i < 17; $i++) {
+    $startTime = DateTime::createFromFormat('H', $i)->format('h:i A');
+    $endTime = DateTime::createFromFormat('H', $i + 1)->format('h:i A');
+    $timeSlot = "$startTime - $endTime";
+
+    // Add the time slot to the list if not already booked for the selected date
+    if (empty($bookedTimesByDate[$selectedDate]) || !in_array($timeSlot, $bookedTimesByDate[$selectedDate])) {
         $allTimes[] = $timeSlot;
     }
 }
@@ -42,8 +43,8 @@ for ($i = 8; $i <= 16; $i++) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $selectedDate = $_POST["date"];
     $selectedDateTime = new DateTime($selectedDate);
-
     $currentDateTime = new DateTime();
+
     if ($selectedDateTime < $currentDateTime) {
         $errorMessage = "You cannot book appointments for past dates.";
     } else {
@@ -65,12 +66,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (empty($time)) {
                 $errorMessage = "Please select a time.";
             } else {
-                // Convert DateTime object to string
-                $formattedDateTime = $currentDateTime->format('Y-m-d H:i:s');
-
                 // Proceed with inserting the appointment
                 $stmt = $connection->prepare("INSERT INTO appointments (userid, araw, oras, statsid, appcreated) 
                 VALUES (?, ?, ?, ?, ?)");
+                
+                // Use the entire time string as booked (e.g., "10:00 AM - 11:00 AM")
+                $formattedDateTime = $currentDateTime->format('Y-m-d H:i:s');
+
                 $stmt->bind_param("issis", $userid, $selectedDate, $time, $status, $formattedDateTime);
 
                 if ($stmt->execute()) {
@@ -80,8 +82,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
 
                 $stmt->close();
-
                 header("Location: adminappointments.php");
+                exit(); // Make sure to exit after a redirect
             }
         }
     }
@@ -238,7 +240,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <option value="2" <?php echo ($status === "2") ? "selected" : ""; ?>>Confirmed</option>
                                 <option value="3" <?php echo ($status === "3") ? "selected" : ""; ?>>Ongoing</option>
                                 <option value="4" <?php echo ($status === "4") ? "selected" : ""; ?>>Done</option>
-                                <option value="4" <?php echo ($status === "5") ? "selected" : ""; ?>>Cancelled</option>
+                                <option value="5" <?php echo ($status === "5") ? "selected" : ""; ?>>Cancelled</option>
                             </select>
                         </div>
                     </div>
@@ -261,66 +263,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <!-- Script -->
-    
-    <script> 
-    /---------------------------Search Appointment---------------------------//
-    function searchAppointment() {
-        const query = document.getElementById("searchAppointmentInput").value;
-        // Make an AJAX request to fetch search results
-        $.ajax({
-            url: 'search_appointmentadmin.php',
-            method: 'POST',
-            data: { query: query },
-            success: function(data) {
-                // Update the appointment-table with the search results
-                $('#appointment-table-body').html(data);
-            }
-        })};
-
-    /---------------------------Date Time Appointment---------------------------//
-    $(document).ready(function() {
-        $("#date-input").change(function() {
-        var selectedDate = $(this).val();
-
-        var currentDate = new Date();
-        var currentDateTime = currentDate.toISOString().slice(0, 19).replace("T", " ");
-
-        $.ajax({
-            url: "get_available_times.php", 
-            method: "POST",
-            data: { date: selectedDate },
-            success: function(response) {
-            $("#available-times-container").html("");
-
-            const times = JSON.parse(response);
-            times.forEach(function(time) {
-            console.log("Available Time: " + time);
-            $("#available-times-container").append('<div class="alert alert-success" role="alert">' + time + '</div>');
-        });
-
-            $("#time").empty();
-            $("#time").append('<option value="" disabled selected>Select Time</option>');
-            times.forEach(function(time) {
-            $("#time").append('<option value="' + time + '">' + time + '</option>');
-        });
-
-                        
-        if (selectedDate <= currentDateTime) 
-            $("#available-times-container").html("<div class='alert alert-success text-center fw-bold' role='alert'><p class='mt-2'>Selected date has passed. Please choose a future date.</p></div>");
-            },
-            error: function(xhr, status, error) {
-            console.error("Error fetching available times: " + error);
-            }
-        });
-        });
-            });
-    
-    </script>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script> 
+    /---------------------------Date Time Appointment---------------------------//
+    $(document).ready(function() {
+        $("#date-input").change(function() {
+            var selectedDate = $(this).val();
+
+            $.ajax({
+                url: "get_available_times.php", 
+                method: "POST",
+                data: { date: selectedDate },
+                success: function(response) {
+                    const times = JSON.parse(response);
+                    $("#time").empty(); // Clear previous options
+                    $("#time").append('<option value="" disabled selected>Select Time</option>'); // Add default option
+                    
+                    // Check for error in the response
+                    if (times.error) {
+                        console.error("Error fetching available times: " + times.error);
+                        return; // Exit if there's an error
+                    }
+                    
+                    times.forEach(function(time) {
+                        $("#time").append('<option value="' + time + '">' + time + '</option>'); // Populate available times
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching available times: " + error);
+                }
+            });
+        });
+    });
+    
+    </script>
 
 </body>
 </html>

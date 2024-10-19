@@ -5,8 +5,6 @@ require("../server/connection.php");
 if (isset($_POST['appointmentId'])) {
     $appointmentId = $_POST['appointmentId'];
 
-    // Perform any necessary validation on $appointmentId
-
     $appointmentId = $connection->real_escape_string($appointmentId);
 
     $updateQuery = "UPDATE appointments SET statsid = 2 WHERE appid = '$appointmentId'";

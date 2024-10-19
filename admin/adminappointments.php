@@ -131,7 +131,7 @@ if(isset($_SESSION["logged_in"])){
                                         <th scope="col" class="text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody class="table-group-divider">
+                                <tbody id="appointment-table-body" class="table-group-divider">
                                 <?php
                                     // Query the database to fetch user data
                                     $result = $connection->query("SELECT appointments.appid, appointments.userid, users.firstname, users.lastname, 
@@ -163,7 +163,7 @@ if(isset($_SESSION["logged_in"])){
 
                                             }
                                             echo '<button class="btn btn-primary me-2" onclick="editAppointment(' . $row['appid'] . ')">Edit</button>';
-                                            echo '<button class="btn btn-danger" onclick="deleteAppointment(' . $row['appid'] . ')">Delete</button>';
+                                            echo '<button class="btn btn-danger" onclick="openDeleteModal(' . $row['appid'] .')">Delete</button>';
                                             echo '</div>';
                                             echo '</td>';
                                             echo '</tr>';
@@ -202,6 +202,44 @@ if(isset($_SESSION["logged_in"])){
                 </div>
             </div>
 
+            <!-- Cancel Appointment Modal -->
+            <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="cancelModalLabel">Cancel Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to cancel this appointment?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep It</button>
+                            <button type="button" class="btn btn-danger" id="cancelButton">Yes, Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Appointment Modal -->
+            <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteModalLabel">Delete Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete this appointment?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteButton">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Toast Notification -->
             <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
                 <div id="liveToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
@@ -219,21 +257,35 @@ if(isset($_SESSION["logged_in"])){
     </div>
 
     <!-- Script -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <script> 
+    <script>
     /---------------------------Search Appointment---------------------------//
-    function searchAppointment() {
-        const query = document.getElementById("searchAppointmentInput").value;
-        // Make an AJAX request to fetch search results
-        $.ajax({
-            url: 'search_appointmentadmin.php',
-            method: 'POST',
-            data: { query: query },
-            success: function(data) {
-                // Update the appointment-table with the search results
-                $('#appointment-table-body').html(data);
-            }
-        })};
+    document.addEventListener("DOMContentLoaded", function () {
+        function searchAppointment() {
+            const query = document.getElementById("searchAppointmentInput").value;
+
+            $.ajax({
+                url: 'search_appointments.php',
+                method: 'POST',
+                data: { query: query },
+                success: function (data) {
+                    console.log(data); // Debugging log
+                    $('#appointment-table-body').html(data);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Search request failed:', error);
+                }
+            });
+        }
+
+        // Attach the function to the input field
+        document.getElementById("searchAppointmentInput").oninput = searchAppointment;
+    });
 
     //---------------------------Confirm Appointment---------------------------//
         // JavaScript code for modal and toast handling
@@ -291,58 +343,81 @@ if(isset($_SESSION["logged_in"])){
 
         //---------------------------Edit Appointment---------------------------//
         function editAppointment(appid) {
-            window.location = "admineditappointment.php?id=" + appid;
+            window.location = "admineditappointment.php?appid=" + appid;
         }
 
 
         //---------------------------Delete Appointment ---------------------------//
-        const deleteAppointment = (appid) => {
+        let appointmentIdToDelete = null;
 
-            $.ajax({
-                method: "POST",
-                url: "deleteappointment.php",
-                data: {id: id},
-                success: function(res) {
-
-                    
-                    alert("Appointment deleted successfully");
-                    location.reload();
-                },
-                error: function(xhr, status, error) {
-                    
-                    console.error(error);
-                    alert("Error deleting appointment");
-                }
-            });
+        // Open Delete Modal
+        function openDeleteModal(appid) {
+            appointmentIdToDelete = appid;
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
         }
 
-        //---------------------------Cancel Appointment---------------------------//
-        function cancelAppointment(appid) {
-            const canAppointment = confirm("Are you sure you want to cancel this appointment?");
+        // Handle Delete Confirmation
+        document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+            if (appointmentIdToDelete) {
+                $.ajax({
+                    url: "deleteappointment.php",
+                    method: "POST",
+                    data: { appointmentId: appointmentIdToDelete },
+                    dataType: "json",
+                    success: function (response) {
+                        if (response.success) {
+                            showToast(response.success, "bg-success");
+                            setTimeout(() => location.reload(), 2000); // Optional delay before reload
+                        } else {
+                            showToast(response.error, "bg-danger");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        showToast("Error deleting the appointment", "bg-danger");
+                    }
+                });
+            }
+        });
 
-            if (canAppointment) {
+        //---------------------------Cancel Appointment---------------------------//
+        let appointmentIdToCancel = null;
+
+        // Function to open the cancel modal
+        function cancelAppointment(appid) {
+            console.log("Opening cancel modal for appointment ID:", appid); // Debugging log
+            appointmentIdToCancel = appid;
+            const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+            cancelModal.show();
+        }
+
+        // Event listener for the cancel button in the modal
+        document.getElementById('cancelButton').addEventListener('click', function () {
+            if (appointmentIdToCancel) {
                 $.ajax({
                     url: "cancel_appointment.php",
                     method: "POST",
-                    data: { appointmentId: appid },
+                    data: { appointmentId: appointmentIdToCancel },
                     dataType: "json",
                     success: function(response) {
                         if (response.success) {
-                            alert(response.success);
-                            location.reload();
+                            // Display a success toast
+                            showToast(response.success, "bg-success");
+                            setTimeout(() => location.reload(), 2000); // Optional delay before reload
                         } else {
-                            alert(response.error);
+                            // Display an error toast
+                            showToast(response.error, "bg-danger");
                         }
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle errors from the AJAX request
+                        showToast('Error cancelling the appointment', 'bg-danger');
                     }
-                })
+                });
             }
-        }
-    </script>
+        });
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </script>
 
 </body>
 </html>
