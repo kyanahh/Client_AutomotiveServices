@@ -1,81 +1,46 @@
 <?php
-session_start();
-require("../server/connection.php");
 
-if (isset($_SESSION["logged_in"])) {
-    $textaccount = $_SESSION["firstname"] ?? "Account";
-    $useremail = $_SESSION["email"] ?? "";
-} else {
+session_start();
+
+require("../server/connection.php");   
+
+if(isset($_SESSION["logged_in"])){
+    if(isset($_SESSION["firstname"]) || isset($_SESSION["email"])){
+        $textaccount = $_SESSION["firstname"];
+        $useremail = $_SESSION["email"];
+    }else{
+        $textaccount = "Account";
+    }
+}else{
     $textaccount = "Account";
 }
 
-// Initialize variables
-$selectedDate = "";
-$currentTime = "";  // Ensure currentTime is initialized
-
-// Validate and fetch appointment details
-if (isset($_GET['appid']) && is_numeric($_GET['appid'])) {
-    $appid = intval($_GET['appid']);
-
-    // Fetch the appointment details
-    $stmt = $connection->prepare(
-        "SELECT appointments.userid, appointments.araw, appointments.oras, 
-        appointments.statsid, stats.statsname 
-        FROM appointments 
-        INNER JOIN stats ON appointments.statsid = stats.statsid 
-        WHERE appointments.appid = ?"
-    );
-    $stmt->bind_param("i", $appid);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $appointment = $result->fetch_assoc();
-        $userid = $appointment['userid'];
-        $date = $appointment['araw'];  // Date of the appointment
-        $currentTime = trim($appointment['oras']);  // Current time slot
-        $status = $appointment['statsid'];
-        $selectedDate = $date;  // Use the appointment date as the initial selected date
-    } else {
-        echo "No appointment found!";
-        exit;
-    }
-} else {
-    echo "Invalid appointment ID!";
-    exit;
-}
-
-// Fetch booked times from the database (excluding the current appointment)
-$query = "SELECT oras, araw FROM appointments WHERE statsid != 5 AND appid != ?";
-$stmt = $connection->prepare($query);
-$stmt->bind_param("i", $appid);
-$stmt->execute();
-$result = $stmt->get_result();
+// Booked times from the database
+$query = "SELECT oras, araw FROM appointments WHERE statsid != 5"; // Get only non-cancelled appointments
+$result = $connection->query($query);
 
 $bookedTimesByDate = [];
 while ($row = $result->fetch_assoc()) {
     $bookedTimesByDate[$row['araw']][] = trim($row['oras']);
 }
 
-// Generate available time slots (8:00 AM to 5:00 PM)
+$userid = $date = $time = $status = $errorMessage = "";
+
+$selectedDate = isset($_POST['date']) ? $_POST['date'] : null;
+
 $allTimes = [];
 for ($i = 8; $i < 17; $i++) {
     $startTime = DateTime::createFromFormat('H', $i)->format('h:i A');
     $endTime = DateTime::createFromFormat('H', $i + 1)->format('h:i A');
     $timeSlot = "$startTime - $endTime";
 
-    // Ensure the current appointment time is always available
-    if (
-        $timeSlot == $currentTime || 
-        (empty($bookedTimesByDate[$selectedDate]) || 
-        !in_array($timeSlot, $bookedTimesByDate[$selectedDate]))
-    ) {
+    // Add the time slot to the list if not already booked for the selected date
+    if (empty($bookedTimesByDate[$selectedDate]) || !in_array($timeSlot, $bookedTimesByDate[$selectedDate])) {
         $allTimes[] = $timeSlot;
     }
 }
 
-// Handle form submission for updating the appointment
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $selectedDate = $_POST["date"];
     $selectedDateTime = new DateTime($selectedDate);
     $currentDateTime = new DateTime();
@@ -83,25 +48,47 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($selectedDateTime < $currentDateTime) {
         $errorMessage = "You cannot book appointments for past dates.";
     } else {
-        $newDate = $_POST['date'];
-        $newTime = $_POST['time'];
-        $newStatus = $_POST['status'];
+        $userid = $_POST["userid"];
+        $time = $_POST["time"];
+        $status = $_POST["status"];
 
-        // Update the appointment in the database
-        $updateStmt = $connection->prepare(
-            "UPDATE appointments SET araw = ?, oras = ?, statsid = ? WHERE appid = ?"
-        );
-        $updateStmt->bind_param("ssii", $newDate, $newTime, $newStatus, $appid);
+        // Check if the user ID exists before proceeding
+        $stmtCheckUser = $connection->prepare("SELECT COUNT(*) FROM users WHERE userid = ?");
+        $stmtCheckUser->bind_param("i", $userid);
+        $stmtCheckUser->execute();
+        $stmtCheckUser->bind_result($userCount);
+        $stmtCheckUser->fetch();
+        $stmtCheckUser->close();
 
-        if ($updateStmt->execute()) {
-            // Redirect with a success message
-            header("Location: adminappointments.php?message=Appointment updated successfully!");
-            exit;
+        if ($userCount === 0) {
+            $errorMessage = "User does not exist.";
         } else {
-            echo "Error updating appointment: " . $connection->error;
+            if (empty($time)) {
+                $errorMessage = "Please select a time.";
+            } else {
+                // Proceed with inserting the appointment
+                $stmt = $connection->prepare("INSERT INTO appointments (userid, araw, oras, statsid, appcreated) 
+                VALUES (?, ?, ?, ?, ?)");
+                
+                // Use the entire time string as booked (e.g., "10:00 AM - 11:00 AM")
+                $formattedDateTime = $currentDateTime->format('Y-m-d H:i:s');
+
+                $stmt->bind_param("issis", $userid, $selectedDate, $time, $status, $formattedDateTime);
+
+                if ($stmt->execute()) {
+                    $errorMessage = "Appointment booked successfully!";
+                } else {
+                    $errorMessage = "Error: " . $stmt->error;
+                }
+
+                $stmt->close();
+                header("Location: staffappointments.php");
+                exit(); // Make sure to exit after a redirect
+            }
         }
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -112,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <title>N.M.A.</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" type="text/css" href="admin.css">
+    <link rel="stylesheet" type="text/css" href="staff.css">
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"/>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
 </head>
@@ -129,38 +116,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <ul class="list-unstyled px-2">
 
                 <li>
-                    <a href="adminindex.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffindex.php" class="text-decoration-none px-3 py-2 d-block">
                         <i class="fal fa-home me-2"></i>Dashboard
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminusers.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffusers.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-person-square me-2"></i>Users
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminchats.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffchats.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-chat-text me-2"></i>Chats
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminappointments.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffappointments.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-calendar-check me-2"></i>Appointments
                     </a>
                 </li>
 
                 <li>
-                    <a href="admintransactions.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="stafftransactions.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-file-earmark-text me-2"></i>Transactions
-                    </a>
-                </li>
-
-                <li>
-                    <a href="adminuserlogs.php" class="text-decoration-none px-3 py-2 d-block">
-                    <i class="bi bi-journal me-2"></i>User Logs
                     </a>
                 </li>
 
@@ -169,7 +150,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <hr class="h-color mx-2">
 
             <ul class="list-unstyled px-2">
-                <li class=""><a href="adminsettings.php" class="text-decoration-none px-3 py-2 d-block">
+                <li class=""><a href="staffsettings.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="fal fa-bars me-2"></i>Settings</a></li>
                 <li class=""><a href="../logout.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-box-arrow-left me-2"></i>Logout</a></li>
@@ -178,7 +159,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <hr class="h-color mx-2 mt-5">
             
             <div class="d-flex align-items-end">
-                <p class="text-white ms-3 fs-6">Logged in as: <?php echo $useremail ?><br>(Admin)</p>
+                <p class="text-white ms-3 fs-6 px-2">Logged in as: <?php echo $useremail ?><br>(Staff)</p>
             </div>
         </div>
 
@@ -188,13 +169,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
             </nav>
 
-            <!-- Edit Appointments -->
+            <!-- Add Appointments -->
             <div class="px-3 pt-4">
                 
                 <form method="POST" action="<?php htmlspecialchars("SELF_PHP"); ?>">
 
                     <div class="row ms-2 mt-1">
-                        <h2 class="fs-5">Edit Appointment</h2>
+                        <h2 class="fs-5">Add Appointment</h2>
                     </div>
 
                     <div class="ms-2 col-sm-8">
@@ -234,12 +215,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </div>
                         <div class="col-sm-6">
                             <select id="time" name="time" class="form-select" required>
-                                <option value="" disabled>Select Time</option>
+                                <option value="" disabled selected>Select Time</option>
                                 <?php foreach ($allTimes as $availableTime) : ?>
-                                    <option value="<?php echo $availableTime; ?>"
-                                        <?php echo ($availableTime === $currentTime) ? 'selected' : ''; ?>>
-                                        <?php echo $availableTime; ?>
-                                    </option>
+                                    <option value="<?php echo $availableTime; ?>"><?php echo $availableTime; ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -252,11 +230,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <div class="col-sm-6">
                             <select id="status" name="status" class="form-select" required>
                                 <option value="" disabled selected>Select Status</option>
-                                <option value="1" <?php echo ($status === 1) ? "selected" : ""; ?>>Pending</option>
-                                <option value="2" <?php echo ($status === 2) ? "selected" : ""; ?>>Confirmed</option>
-                                <option value="3" <?php echo ($status === 3) ? "selected" : ""; ?>>Ongoing</option>
-                                <option value="4" <?php echo ($status === 4) ? "selected" : ""; ?>>Done</option>
-                                <option value="5" <?php echo ($status === 5) ? "selected" : ""; ?>>Cancelled</option>
+                                <option value="1" <?php echo ($status === "1") ? "selected" : ""; ?>>Pending</option>
+                                <option value="2" <?php echo ($status === "2") ? "selected" : ""; ?>>Confirmed</option>
+                                <option value="3" <?php echo ($status === "3") ? "selected" : ""; ?>>Ongoing</option>
+                                <option value="4" <?php echo ($status === "4") ? "selected" : ""; ?>>Done</option>
+                                <option value="5" <?php echo ($status === "5") ? "selected" : ""; ?>>Cancelled</option>
                             </select>
                         </div>
                     </div>

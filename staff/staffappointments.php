@@ -105,7 +105,7 @@ if(isset($_SESSION["logged_in"])){
                         <input type="text" class="form-control" id="searchAppointmentInput" placeholder="Search" aria-describedby="button-addon2" oninput="searchAppointment()">
                     </div>
                     <div class="col-sm-1">
-                        <a class="btn btn-dark ms-2 px-3" href="adminaddappointment.php"><i class="bi bi-plus-lg"></i></a>
+                        <a class="btn btn-dark ms-2 px-3" href="staffaddappointment.php"><i class="bi bi-plus-lg"></i></a>
                     </div>
                 </div>
                 
@@ -125,12 +125,14 @@ if(isset($_SESSION["logged_in"])){
                                         <th scope="col" class="text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody class="table-group-divider">
+                                <tbody id="appointment-table-body" class="table-group-divider">
                                 <?php
                                     // Query the database to fetch user data
-                                    $result = $connection->query("SELECT appointments.userid, users.firstname, users.lastname, 
-                                    appointments.araw, appointments.oras, appointments.stats, appointments.appcreated FROM appointments 
-                                    INNER JOIN users on appointments.userid = users.userid ORDER BY appcreated DESC");
+                                    $result = $connection->query("SELECT appointments.appid, appointments.userid, users.firstname, users.lastname, 
+                                    appointments.araw, appointments.oras, stats.statsname, appointments.appcreated FROM ((appointments 
+                                    INNER JOIN users on appointments.userid = users.userid) 
+                                    INNER JOIN stats on appointments.statsid = stats.statsid) 
+                                    ORDER BY appcreated DESC");
 
                                     if ($result->num_rows > 0) {
                                         $count = 1; 
@@ -140,23 +142,21 @@ if(isset($_SESSION["logged_in"])){
                                             echo '<td>' . $count . '</td>';
                                             echo '<td>' . $row['userid'] . '</td>';
                                             echo '<td>' . $row['firstname'] . ' ' . $row['lastname'] . '</td>';
-                                            echo '<td>' . $row['categoryname'] . '</td>';
                                             // Format the date
                                             $dateObject = new DateTime($row['araw']);
                                             $formattedDate = $dateObject->format('F j, Y');
                                             echo '<td>' . $formattedDate . '</td>';
                                             echo '<td>' . $row['oras'] . '</td>';
-                                            echo '<td>' . $row['stats'] . '</td>';
+                                            echo '<td>' . $row['statsname'] . '</td>';
                                             echo '<td>' . $row['appcreated'] . '</td>';
                                             echo '<td>';
                                             echo '<div class="d-flex justify-content-center">';
-                                            if ($row['status'] == 'Pending') {
-                                                echo '<button class="btn btn-success me-2" onclick="confirmAppointment(' . $row['id'] . ')">Confirm</button>';
-                                                echo '<button class="btn btn-danger me-2" onclick="cancelAppointment(' . $row['id'] . ')">Cancel</button>';
+                                            if ($row['statsname'] == 'Pending') {
+                                                echo '<button class="btn btn-success me-2" onclick="openConfirmModal(' . $row['appid'] . ')">Confirm</button>';
+                                                echo '<button class="btn btn-danger me-2" onclick="cancelAppointment(' . $row['appid'] . ')">Cancel</button>';
 
                                             }
-                                            echo '<button class="btn btn-primary me-2" onclick="editAppointment(' . $row['id'] . ')">Edit</button>';
-                                            echo '<button class="btn btn-danger" onclick="deleteAppointment(' . $row['id'] . ')">Delete</button>';
+                                            echo '<button class="btn btn-primary me-2" onclick="editAppointment(' . $row['appid'] . ')">Edit</button>';
                                             echo '</div>';
                                             echo '</td>';
                                             echo '</tr>';
@@ -176,15 +176,188 @@ if(isset($_SESSION["logged_in"])){
             </div>
             <!-- End of List of Appointments -->
 
+            <!-- Confirmation Modal -->
+            <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="confirmModalLabel">Confirm Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to confirm this appointment?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" id="confirmButton">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cancel Appointment Modal -->
+            <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="cancelModalLabel">Cancel Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to cancel this appointment?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep It</button>
+                            <button type="button" class="btn btn-danger" id="cancelButton">Yes, Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast Notification -->
+            <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
+                <div id="liveToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body" id="toastMessage">
+                            Appointment confirmed successfully!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     
     </div>
 
-    <!-- Script -->  
+    <!-- Script -->
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+    /---------------------------Search Appointment---------------------------//
+    document.addEventListener("DOMContentLoaded", function () {
+        function searchAppointment() {
+            const query = document.getElementById("searchAppointmentInput").value;
+
+            $.ajax({
+                url: 'search_appointments.php',
+                method: 'POST',
+                data: { query: query },
+                success: function (data) {
+                    console.log(data); // Debugging log
+                    $('#appointment-table-body').html(data);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Search request failed:', error);
+                }
+            });
+        }
+
+        // Attach the function to the input field
+        document.getElementById("searchAppointmentInput").oninput = searchAppointment;
+    });
+
+    //---------------------------Confirm Appointment---------------------------//
+        // JavaScript code for modal and toast handling
+        let appointmentIdToConfirm = null;
+
+        // Function to open the confirmation modal
+        function openConfirmModal(appid) {
+            console.log("Opening modal for appointment ID:", appid); // Debugging log
+            appointmentIdToConfirm = appid;
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
+        }
+
+        // Event listener for the confirmation button
+        document.getElementById('confirmButton').addEventListener('click', function () {
+            if (appointmentIdToConfirm) {
+                $.ajax({
+                    url: "confirm_appointment.php",
+                    method: "POST",
+                    data: { appointmentId: appointmentIdToConfirm },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            // Display the success toast
+                            showToast(response.success, "bg-success");
+                            setTimeout(() => location.reload(), 2000); // Optional delay before reload
+                        } else {
+                            // Display an error toast
+                            showToast(response.error, "bg-danger");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle errors from the AJAX request
+                        showToast('Error confirming the appointment', 'bg-danger');
+                    }
+                });
+            }
+        });
+
+        // Function to display the toast
+        function showToast(message, className) {
+            // Get the toast elements
+            const toastMessage = document.getElementById('toastMessage');
+            const toastElement = document.getElementById('liveToast');
+
+            // Update the toast message and class
+            toastMessage.textContent = message;
+            toastElement.className = `toast align-items-center text-white ${className} border-0`;
+
+            // Initialize and show the toast
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+        }
+
+
+        //---------------------------Edit Appointment---------------------------//
+        function editAppointment(appid) {
+            window.location = "staffeditappointment.php?appid=" + appid;
+        }
+
+        //---------------------------Cancel Appointment---------------------------//
+        let appointmentIdToCancel = null;
+
+        // Function to open the cancel modal
+        function cancelAppointment(appid) {
+            console.log("Opening cancel modal for appointment ID:", appid); // Debugging log
+            appointmentIdToCancel = appid;
+            const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+            cancelModal.show();
+        }
+
+        // Event listener for the cancel button in the modal
+        document.getElementById('cancelButton').addEventListener('click', function () {
+            if (appointmentIdToCancel) {
+                $.ajax({
+                    url: "cancel_appointment.php",
+                    method: "POST",
+                    data: { appointmentId: appointmentIdToCancel },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            // Display a success toast
+                            showToast(response.success, "bg-success");
+                            setTimeout(() => location.reload(), 2000); // Optional delay before reload
+                        } else {
+                            // Display an error toast
+                            showToast(response.error, "bg-danger");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle errors from the AJAX request
+                        showToast('Error cancelling the appointment', 'bg-danger');
+                    }
+                });
+            }
+        });
+
+    </script>
 
 </body>
 </html>

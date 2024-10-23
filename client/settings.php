@@ -102,9 +102,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         Account
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="profile.php">Profile</a></li>
                         <li><a class="dropdown-item" href="appointments.php">Appointments</a></li>
-                        <li><a class="dropdown-item" href="settings.php">Settings</a></li>
+                        <li><a class="dropdown-item" href="transactions.php">Transactions</a></li>
+                        <li><a class="dropdown-item" href="settings.php">Account <br> Management</a></li>
                         <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item">Hello, <?php echo $textaccount?></a></li>
