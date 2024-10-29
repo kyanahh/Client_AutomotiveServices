@@ -24,7 +24,8 @@ while ($row = $result->fetch_assoc()) {
     $bookedTimesByDate[$row['araw']][] = trim($row['oras']);
 }
 
-$userid = $date = $time = $status = $errorMessage = "";
+$userid = $date = $time = $errorMessage = "";
+$status = 1;
 
 $selectedDate = isset($_POST['date']) ? $_POST['date'] : null;
 
@@ -50,7 +51,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         $userid = $_POST["userid"];
         $time = $_POST["time"];
-        $status = $_POST["status"];
 
         // Check if the user ID exists before proceeding
         $stmtCheckUser = $connection->prepare("SELECT COUNT(*) FROM users WHERE userid = ?");
@@ -219,22 +219,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <?php foreach ($allTimes as $availableTime) : ?>
                                     <option value="<?php echo $availableTime; ?>"><?php echo $availableTime; ?></option>
                                 <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3 ms-2 mt-2">
-                        <div class="col-sm-2">
-                            <label class="form-label mt-2 px-3">Status</label>
-                        </div>
-                        <div class="col-sm-6">
-                            <select id="status" name="status" class="form-select" required>
-                                <option value="" disabled selected>Select Status</option>
-                                <option value="1" <?php echo ($status === "1") ? "selected" : ""; ?>>Pending</option>
-                                <option value="2" <?php echo ($status === "2") ? "selected" : ""; ?>>Confirmed</option>
-                                <option value="3" <?php echo ($status === "3") ? "selected" : ""; ?>>Ongoing</option>
-                                <option value="4" <?php echo ($status === "4") ? "selected" : ""; ?>>Done</option>
-                                <option value="5" <?php echo ($status === "5") ? "selected" : ""; ?>>Cancelled</option>
                             </select>
                         </div>
                     </div>

@@ -93,7 +93,7 @@ if(isset($_SESSION["logged_in"])){
                         <tbody id="appointment-table-body" class="table-group-divider">
                             <?php
                                 // Query the database to fetch user data
-                                $result = $connection->query("SELECT appointments.appid, appointments.userid,  
+                                $result = $connection->query("SELECT appointments.appid, 
                                 appointments.araw, appointments.oras, stats.statsname, appointments.appcreated FROM ((appointments 
                                 INNER JOIN users on appointments.userid = users.userid) 
                                 INNER JOIN stats on appointments.statsid = stats.statsid) 
@@ -153,10 +153,40 @@ if(isset($_SESSION["logged_in"])){
         </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
+        <div id="liveToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">
+                    Appointment confirmed successfully!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Script -->  
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
+
+    // Function to display the toast
+    function showToast(message, className) {
+        // Get the toast elements
+        const toastMessage = document.getElementById('toastMessage');
+        const toastElement = document.getElementById('liveToast');
+
+        // Update the toast message and class
+        toastMessage.textContent = message;
+        toastElement.className = `toast align-items-center text-white ${className} border-0`;
+
+        // Initialize and show the toast
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+    }
 
     /---------------------------Search Appointment---------------------------//
     document.addEventListener("DOMContentLoaded", function () {

@@ -162,6 +162,15 @@ if(isset($_SESSION["logged_in"])){
                                                 echo '<button class="btn btn-danger me-2" onclick="cancelAppointment(' . $row['appid'] . ')">Cancel</button>';
 
                                             }
+
+                                            if ($row['statsname'] == 'Confirmed') {
+                                                echo '<button class="btn btn-warning me-2" onclick="openOngoingModal(' . $row['appid'] . ')">Ongoing</button>';
+                                            }
+
+                                            if ($row['statsname'] == 'Ongoing') {
+                                                echo '<button class="btn btn-info me-2" onclick="openDoneModal(' . $row['appid'] . ')">Done</button>';
+                                            }
+
                                             echo '<button class="btn btn-primary me-2" onclick="editAppointment(' . $row['appid'] . ')">Edit</button>';
                                             echo '<button class="btn btn-danger" onclick="openDeleteModal(' . $row['appid'] .')">Delete</button>';
                                             echo '</div>';
@@ -197,6 +206,44 @@ if(isset($_SESSION["logged_in"])){
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-success" id="confirmButton">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ongoing Modal -->
+            <div class="modal fade" id="ongoingModal" tabindex="-1" aria-labelledby="ongoingModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="ongoingModalLabel">Ongoing Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to update this appointment to Ongoing?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" id="ongoingButton">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Done Modal -->
+            <div class="modal fade" id="doneModal" tabindex="-1" aria-labelledby="doneModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="doneModalLabel">Done Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to update this appointment to Done?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success" id="doneButton">Confirm</button>
                         </div>
                     </div>
                 </div>
@@ -412,6 +459,82 @@ if(isset($_SESSION["logged_in"])){
                     error: function(xhr, status, error) {
                         // Handle errors from the AJAX request
                         showToast('Error cancelling the appointment', 'bg-danger');
+                    }
+                });
+            }
+        });
+
+        //---------------------------Ongoing Appointment---------------------------//
+        // JavaScript code for modal and toast handling
+        let appointmentIdToOngoing = null;
+
+        // Function to open the confirmation modal
+        function openOngoingModal(appid) {
+            console.log("Opening modal for appointment ID:", appid); // Debugging log
+            appointmentIdToOngoing = appid;
+            const ongoingModal = new bootstrap.Modal(document.getElementById('ongoingModal'));
+            ongoingModal.show();
+        }
+
+        // Event listener for the confirmation button
+        document.getElementById('ongoingButton').addEventListener('click', function () {
+            if (appointmentIdToOngoing) {
+                $.ajax({
+                    url: "ongoing_appointment.php",
+                    method: "POST",
+                    data: { appointmentId: appointmentIdToOngoing },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            // Display the success toast
+                            showToast(response.success, "bg-success");
+                            setTimeout(() => location.reload(), 2000); // Optional delay before reload
+                        } else {
+                            // Display an error toast
+                            showToast(response.error, "bg-danger");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle errors from the AJAX request
+                        showToast('Error updating the appointment to Ongoing', 'bg-danger');
+                    }
+                });
+            }
+        });
+
+        //---------------------------Done Appointment---------------------------//
+        // JavaScript code for modal and toast handling
+        let appointmentIdToDone = null;
+
+        // Function to open the confirmation modal
+        function openDoneModal(appid) {
+            console.log("Opening modal for appointment ID:", appid); // Debugging log
+            appointmentIdToDone = appid;
+            const doneModal = new bootstrap.Modal(document.getElementById('doneModal'));
+            doneModal.show();
+        }
+
+        // Event listener for the confirmation button
+        document.getElementById('doneButton').addEventListener('click', function () {
+            if (appointmentIdToDone) {
+                $.ajax({
+                    url: "done_appointment.php",
+                    method: "POST",
+                    data: { appointmentId: appointmentIdToDone },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            // Display the success toast
+                            showToast(response.success, "bg-success");
+                            setTimeout(() => location.reload(), 2000); // Optional delay before reload
+                        } else {
+                            // Display an error toast
+                            showToast(response.error, "bg-danger");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle errors from the AJAX request
+                        showToast('Error updating the appointment to Done', 'bg-danger');
                     }
                 });
             }

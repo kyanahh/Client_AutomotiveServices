@@ -1,5 +1,7 @@
 <?php
 
+session_start();
+
 require("../server/connection.php");
 
 if(isset($_SESSION["logged_in"])){
@@ -15,28 +17,30 @@ if(isset($_SESSION["logged_in"])){
 if (isset($_POST['query'])) {
     $query = mysqli_real_escape_string($connection, $_POST['query']);
     if (!empty($query)) {
-        $sql = "SELECT appointments.*, users.firstname, users.lastname, stats.statsname 
-        FROM ((appointments 
-        INNER JOIN users ON appointments.userid = users.userid) 
-        INNER JOIN stats ON appointments.statsid = stats.statsid) 
-        WHERE appointments.araw LIKE '%$query%' OR 
-              appointments.oras LIKE '%$query%' OR 
-              stats.statsname LIKE '%$query%' OR 
-              users.firstname LIKE '%$query%' OR 
-              users.lastname LIKE '%$query%' OR 
-              appointments.appid LIKE '%$query%' OR 
-              appointments.userid LIKE '%$query%' OR 
-              appointments.appcreated LIKE '%$query%' OR 
-              DATE_FORMAT(appointments.araw, '%M %e, %Y') LIKE '%$query%' OR 
-              DATE_FORMAT(appointments.appcreated, '%M %e, %Y') LIKE '%$query%' 
-              WHERE users.userid = '$userid' ORDER BY appcreated DESC";
+        $sql = "SELECT appointments.araw, appointments.oras, appointments.appid,
+                appointments.appcreated, stats.statsname 
+                FROM appointments
+                INNER JOIN users ON appointments.userid = users.userid
+                INNER JOIN stats ON appointments.statsid = stats.statsid
+                WHERE users.userid = '$userid' AND (
+                    appointments.araw LIKE '%$query%' OR 
+                    appointments.oras LIKE '%$query%' OR 
+                    stats.statsname LIKE '%$query%' OR 
+                    appointments.appid LIKE '%$query%' OR 
+                    appointments.appcreated LIKE '%$query%' OR 
+                    DATE_FORMAT(appointments.araw, '%M %e, %Y') LIKE '%$query%' OR 
+                    DATE_FORMAT(appointments.appcreated, '%M %e, %Y') LIKE '%$query%'
+                )
+                ORDER BY appcreated DESC";
     } else {
         $sql = "SELECT appointments.appid, appointments.userid, users.firstname, users.lastname, 
-                appointments.araw, appointments.oras, stats.statsname, appointments.appcreated FROM ((appointments 
-                INNER JOIN users on appointments.userid = users.userid) 
-                INNER JOIN stats on appointments.statsid = stats.statsid) 
-                WHERE users.userid = '$userid' ORDER BY appcreated DESC";
-    }
+                appointments.araw, appointments.oras, stats.statsname, appointments.appcreated 
+                FROM appointments
+                INNER JOIN users ON appointments.userid = users.userid
+                INNER JOIN stats ON appointments.statsid = stats.statsid
+                WHERE users.userid = '$userid' 
+                ORDER BY appcreated DESC";
+    }    
 
     $result = mysqli_query($connection, $sql);
 
