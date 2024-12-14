@@ -162,7 +162,8 @@ if(isset($_SESSION["logged_in"])){
                                             }
 
                                             if ($row['statsname'] == 'Ongoing') {
-                                                echo '<button class="btn btn-info me-2" onclick="openDoneModal(' . $row['appid'] . ')">Done</button>';
+                                                echo '<button class="btn btn-warning me-2" onclick="transAppointment(' . $row['appid'] . ')">Transact</button>';
+                                                echo '<button class="btn btn-success me-2" onclick="openDoneModal(' . $row['appid'] . ')">Done</button>';
                                             }
 
                                             echo '<button class="btn btn-primary me-2" onclick="editAppointment(' . $row['appid'] . ')">Edit</button>';
@@ -365,6 +366,11 @@ if(isset($_SESSION["logged_in"])){
         //---------------------------Edit Appointment---------------------------//
         function editAppointment(appid) {
             window.location = "staffeditappointment.php?appid=" + appid;
+        }
+
+        //---------------------------Transact Appointment---------------------------//
+        function transAppointment(appid) {
+            window.location = "stafftransappointment.php?appid=" + appid;
         }
 
         //---------------------------Cancel Appointment---------------------------//
