@@ -34,6 +34,7 @@ if (isset($_POST['query'])) {
         while ($row = $result->fetch_assoc()) {
             echo '<tr>';
         echo '<td>' . $count . '</td>';
+        echo '<td>' . $row['appid'] . '</td>';
         echo '<td>' . $row['userid'] . '</td>';
         echo '<td>' . $row['firstname'] . ' ' . $row['lastname'] . '</td>';
         // Format the date

@@ -98,26 +98,110 @@ if(isset($_SESSION["logged_in"])){
         <div class="content bg-light">
             <nav class="navbar navbar-expand-md navbar-dark bg-light">
                 <div class="container-fluid">
-                    <div class="d-flex justify-content-between d-md-none d-block">
-                     <button class="btn px-1 py-0 open-btn me-2"><i class="fal fa-stream"></i></button>
-                        <a class="navbar-brand fs-4" href="adminindex.php"><span class="bg-dark rounded px-2 py-0 text-white">CL</span></a>
-                       
-                    </div>
-                    <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                        <i class="fal fa-bars"></i>
-                    </button>
-                    <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
-                        <ul class="navbar-nav mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                <a class="nav-link active my-2" aria-current="page"></a>
-                            </li>
-                        </ul>
-
-                    </div>
                 </div>
             </nav>
+
+            <!-- List of Transactions -->
+            <div class="px-3 pt-4">
+                <div class="row">
+                    <div class="col-sm-1">
+                        <h2 class="fs-5 mt-1 ms-2">Transactions</h2>
+                    </div>
+                    <div class="col input-group mb-3 ms-5 ps-4">
+                        <input type="text" class="form-control" id="searchTransactionInput" placeholder="Search" aria-describedby="button-addon2" oninput="searchTransaction()">
+                    </div>
+                </div>
+                
+                <div class="card" style="height: 500px;">
+                    <div class="card-body">
+                        <div class="table-responsive" style="height: 460px;">
+                            <table id="transaction-table" class="table table-bordered table-hover">
+                                <thead class="table-light" style="position: sticky; top: 0;">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Trans ID</th>
+                                        <th scope="col">App ID</th>
+                                        <th scope="col">Plate Number</th>
+                                        <th scope="col">Total Amount</th>
+                                        <th scope="col">Remarks</th>
+                                        <th scope="col">Employee ID</th>
+                                        <th scope="col">Transaction Date</th>
+                                        <th scope="col" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appointment-table-body" class="table-group-divider">
+                                <?php
+                                    // Query the database to fetch user data
+                                    $result = $connection->query("SELECT * FROM trans ORDER BY transid DESC");
+
+                                    if ($result->num_rows > 0) {
+                                        $count = 1; 
+
+                                        while ($row = $result->fetch_assoc()) {
+                                            echo '<tr>';
+                                            echo '<td>' . $count . '</td>';
+                                            echo '<td>' . $row['transid'] . '</td>';
+                                            echo '<td>' . $row['appid'] . '</td>';
+                                            echo '<td>' . $row['platenum'] . '</td>';
+                                            echo '<td>' . $row['total_amount'] . '</td>';
+                                            echo '<td>' . $row['remarks'] . '</td>';
+                                            echo '<td>' . $row['staffid'] . '</td>';
+                                            echo '<td>' . $row['transdate'] . '</td>';
+                                            echo '<td>';
+                                            echo '<div class="d-flex justify-content-center">';
+                                            echo '<button class="btn btn-success me-2" onclick="addDetails(' . $row['transid'] . ')">Add Services</button>';
+                                            echo '<button class="btn btn-primary me-2" onclick="editAppointment(' . $row['transid'] . ')">Edit</button>';
+                                            echo '<button class="btn btn-danger" onclick="openDeleteModal(' . $row['transid'] .')">Delete</button>';
+                                            echo '</div>';
+                                            echo '</td>';
+                                            echo '</tr>';
+                                            $count++; 
+                                        }
+                                    } else {
+                                        echo '<tr><td colspan="5">No transactions found.</td></tr>';
+                                    }
+                                ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                    <!-- Search results will be displayed here -->
+                <div id="search-results"></div>
+            </div>
+            <!-- End of List of Appointments -->
+
+            <!-- Delete Transaction Modal -->
+            <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteModalLabel">Delete Transaction</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete this transaction?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteButton">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast Notification -->
+            <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
+                <div id="liveToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body" id="toastMessage">
+                            Transaction confirmed successfully!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     
     </div>
@@ -127,6 +211,85 @@ if(isset($_SESSION["logged_in"])){
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        /---------------------------Search Transactions---------------------------//
+        document.addEventListener("DOMContentLoaded", function () {
+            function searchAppointment() {
+                const query = document.getElementById("searchTransactionInput").value;
+
+                $.ajax({
+                    url: 'search_transactions.php',
+                    method: 'POST',
+                    data: { query: query },
+                    success: function (data) {
+                        console.log(data); // Debugging log
+                        $('#transaction-table-body').html(data);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Search request failed:', error);
+                    }
+                });
+            }
+
+            // Attach the function to the input field
+            document.getElementById("searchTransactionInput").oninput = searchTransaction;
+        });
+
+        // Function to display the toast
+        function showToast(message, className) {
+            // Get the toast elements
+            const toastMessage = document.getElementById('toastMessage');
+            const toastElement = document.getElementById('liveToast');
+
+            // Update the toast message and class
+            toastMessage.textContent = message;
+            toastElement.className = `toast align-items-center text-white ${className} border-0`;
+
+            // Initialize and show the toast
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+        }
+
+        //---------------------------Edit Appointment---------------------------//
+        function editAppointment(transid) {
+            window.location = "adminedittransaction.php?transid=" + transid;
+        }
+
+        //---------------------------Delete Transaction ---------------------------//
+        let transactionIdToDelete = null;
+
+        // Open Delete Modal
+        function openDeleteModal(transid) {
+            transactionIdToDelete = transid;
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+
+        // Handle Delete Confirmation
+        document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+            if (transactionIdToDelete) {
+                $.ajax({
+                    url: "deletetransaction.php",
+                    method: "POST",
+                    data: { transactionId: transactionIdToDelete },
+                    dataType: "json",
+                    success: function (response) {
+                        if (response.success) {
+                            showToast(response.success, "bg-success");
+                            setTimeout(() => location.reload(), 2000); // Optional delay before reload
+                        } else {
+                            showToast(response.error, "bg-danger");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        showToast("Error deleting the transaction", "bg-danger");
+                    }
+                });
+            }
+        });
+        
+    </script>
 
 </body>
 </html>

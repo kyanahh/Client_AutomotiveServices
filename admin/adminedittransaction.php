@@ -8,7 +8,6 @@ if(isset($_SESSION["logged_in"])){
     if(isset($_SESSION["firstname"]) || isset($_SESSION["email"])){
         $textaccount = $_SESSION["firstname"];
         $useremail = $_SESSION["email"];
-        $staffid = $_SESSION["userid"];
     }else{
         $textaccount = "Account";
     }
@@ -16,74 +15,61 @@ if(isset($_SESSION["logged_in"])){
     $textaccount = "Account";
 }
 
-$platenum = $remarks = "";
-
 // Validate and fetch appointment details
-if (isset($_GET['appid']) && is_numeric($_GET['appid'])) {
-    $appid = intval($_GET['appid']);
+if (isset($_GET['transid']) && is_numeric($_GET['transid'])) {
+    $transid = intval($_GET['transid']);
 
     // Fetch the appointment details
     $stmt = $connection->prepare(
-        "SELECT appointments.userid 
-        FROM appointments 
-        WHERE appointments.appid = ?"
+        "SELECT * FROM trans
+        WHERE transid = ?"
     );
-    $stmt->bind_param("i", $appid);
+    $stmt->bind_param("i", $transid);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        $appointment = $result->fetch_assoc();
-        $userid = $appointment['userid'];
+        $transaction = $result->fetch_assoc();
+        $transid = $transaction['transid'];
+        $appid = $transaction['appid'];
+        $platenum = $transaction['platenum'];
+        $staffid = $transaction['staffid'];
+        $total_amount = $transaction['total_amount'];
+        $remarks = $transaction['remarks'];
+        $transdate = $transaction['transdate'];
+
     } else {
-        echo "No appointment found!";
+        echo "No transaction found!";
         exit;
     }
 } else {
-    echo "Invalid appointment ID!";
+    echo "Invalid transaction ID!";
     exit;
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $currentDateTime = new DateTime();
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $platenum = $_POST["platenum"];
-    $remarks = $_POST["remarks"];
+    $newplatenum = $_POST['platenum'];
+    $newtotalamount = $_POST['total_amount'];
+    $newremarks = $_POST['remarks'];
 
-    // Check if the app ID exists before proceeding
-    $stmtCheckUser = $connection->prepare("SELECT COUNT(*) FROM appointments WHERE appid = ?");
-    $stmtCheckUser->bind_param("i", $appid);
-    $stmtCheckUser->execute();
-    $stmtCheckUser->bind_result($userCount);
-    $stmtCheckUser->fetch();
-    $stmtCheckUser->close();
+    // Update the appointment in the database
+    $updateStmt = $connection->prepare(
+        "UPDATE trans SET platenum = ?, total_amount = ?, remarks = ? WHERE transid = ?"
+    );
+    $updateStmt->bind_param("sisi", $newplatenum, $newtotalamount, $newremarks, $transid);
 
-    if ($userCount === 0) {
-        $errorMessage = "Application does not exist.";
+    if ($updateStmt->execute()) {
+        // Redirect with a success message
+        header("Location: admintransactions.php?message=Transaction updated successfully!");
+        exit;
     } else {
-        // Proceed with inserting the transaction details
-        $stmt = $connection->prepare("INSERT INTO trans (appid, platenum, staffid, remarks, transdate) 
-        VALUES (?, ?, ?, ?, ?)");
-        
-        $formattedDateTime = $currentDateTime->format('Y-m-d H:i:s');
-
-        $stmt->bind_param("isiss", $appid, $platenum, $staffid, $remarks, $formattedDateTime);
-
-        if ($stmt->execute()) {
-            $errorMessage = "Transaction created successfully!";
-        } else {
-            $errorMessage = "Error: " . $stmt->error;
-        }
-
-        $stmt->close();
-        header("Location: admintransactions.php");
-        exit(); // Make sure to exit after a redirect
+        echo "Error updating appointment: " . $connection->error;
     }
-
+    
 }
 
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -169,13 +155,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             </nav>
 
-            <!-- Add Transactions -->
+            <!-- Edit Transactions -->
             <div class="px-3 pt-4">
                         
                 <form method="POST" action="<?php htmlspecialchars("SELF_PHP"); ?>">
 
                     <div class="row ms-2 mt-1">
-                        <h2 class="fs-5">Add Transaction</h2>
+                        <h2 class="fs-5">Edit Transaction</h2>
                     </div>
 
                     <div class="ms-2 col-sm-8">
@@ -189,6 +175,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 ";
                             }
                         ?>
+                    </div>
+
+                    <div class="row mb-3 ms-2 mt-2">
+                        <div class="col-sm-2">
+                            <label class="form-label mt-2 px-3">Transaction ID</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" class="form-control" name="transid" id="transid" value="<?php echo $transid; ?>" disabled>
+                        </div>
                     </div>
                     
                     <div class="row mb-3 ms-2 mt-2">
@@ -220,10 +215,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     <div class="row mb-3 ms-2 mt-2">
                         <div class="col-sm-2">
+                            <label class="form-label mt-2 px-3">Total Amount</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" id="total_amount" class="form-control" name="pltotal_amountatenum" value="<?php echo $total_amount ?>">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 ms-2 mt-2">
+                        <div class="col-sm-2">
                             <label class="form-label mt-2 px-3">Remarks</label>
                         </div>
                         <div class="col-sm-6">
-                            <textarea class="form-control" id="remarks" name="remarks" placeholder="Remarks.." rows="3" value="<?php echo $remarks ?>"></textarea>
+                            <textarea class="form-control" id="remarks" name="remarks" rows="3" value="<?php echo $remarks ?>"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 ms-2 mt-2">
+                        <div class="col-sm-2">
+                            <label class="form-label mt-2 px-3">Transaction Date</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" id="transdate" class="form-control" name="transdate" value="<?php echo $transdate ?>" disabled>
                         </div>
                     </div>
 
@@ -233,12 +246,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                         <div class="col-sm-6">
                             <button type="submit" class="btn btn-dark col-sm-12">Save</button>
+                            <a href="admintransactions.php" class="btn btn-danger col-sm-12 mt-1">Cancel</a>
                         </div>
                     </div>
                 </form>
 
             </div>
-            <!-- End of Add Transactions -->
+            <!-- End of Edit Transactions -->
 
         </div>
     

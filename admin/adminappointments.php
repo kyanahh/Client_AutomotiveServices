@@ -117,11 +117,12 @@ if(isset($_SESSION["logged_in"])){
                 
                 <div class="card" style="height: 500px;">
                     <div class="card-body">
-                        <div class="table-responsive" style="height: 420px;">
+                        <div class="table-responsive" style="height: 460px;">
                             <table id="appointment-table" class="table table-bordered table-hover">
                                 <thead class="table-light" style="position: sticky; top: 0;">
                                     <tr>
                                         <th scope="col">#</th>
+                                        <th scope="col">App ID</th>
                                         <th scope="col">User ID</th>
                                         <th scope="col">Full Name</th>
                                         <th scope="col">Date</th>
@@ -146,6 +147,7 @@ if(isset($_SESSION["logged_in"])){
                                         while ($row = $result->fetch_assoc()) {
                                             echo '<tr>';
                                             echo '<td>' . $count . '</td>';
+                                            echo '<td>' . $row['appid'] . '</td>';
                                             echo '<td>' . $row['userid'] . '</td>';
                                             echo '<td>' . $row['firstname'] . ' ' . $row['lastname'] . '</td>';
                                             // Format the date
@@ -168,7 +170,15 @@ if(isset($_SESSION["logged_in"])){
                                             }
 
                                             if ($row['statsname'] == 'Ongoing') {
-                                                echo '<button class="btn btn-warning me-2" onclick="transAppointment(' . $row['appid'] . ')">Transact</button>';
+                                                // Check if this appid exists in the 'trans' table
+                                                $appid = $row['appid'];
+                                                $transCheck = $connection->query("SELECT COUNT(*) as count FROM trans WHERE appid = $appid");
+                                                $transCheckResult = $transCheck->fetch_assoc();
+
+                                                // If no binding exists, show the "Transact" button
+                                                if ($transCheckResult['count'] == 0) {
+                                                    echo '<button class="btn btn-warning me-2" onclick="transAppointment(' . $appid . ')">Transact</button>';
+                                                }                                               
                                                 echo '<button class="btn btn-success me-2" onclick="openDoneModal(' . $row['appid'] . ')">Done</button>';
                                             }
 
