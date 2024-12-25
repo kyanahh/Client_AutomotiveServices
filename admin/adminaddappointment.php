@@ -152,6 +152,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </li>
 
                 <li>
+                    <a href="admintransactiondetails.php" class="text-decoration-none px-3 py-2 d-block">
+                    <i class="bi bi-card-list me-2"></i>Transactions Details
+                    </a>
+                </li>
+
+                <li>
                     <a href="adminuserlogs.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-journal me-2"></i>User Logs
                     </a>
