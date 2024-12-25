@@ -130,6 +130,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($id)) {
                 </li>
 
                 <li>
+                    <a href="adminservices.php" class="text-decoration-none px-3 py-2 d-block">
+                    <i class="bi bi-gear me-2"></i>Services
+                    </a>
+                </li>
+
+                <li>
                     <a href="adminappointments.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-calendar-check me-2"></i>Appointments
                     </a>
