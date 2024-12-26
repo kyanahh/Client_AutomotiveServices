@@ -119,7 +119,7 @@ if(isset($_SESSION["logged_in"])){
                     <div class="col-sm-1">
                         <h2 class="fs-5 mt-1 ms-2">Transactions</h2>
                     </div>
-                    <div class="col input-group mb-3 ms-5 ps-4">
+                    <div class="col input-group mb-3 ms-4">
                         <input type="text" class="form-control" id="searchTransactionInput" placeholder="Search" aria-describedby="button-addon2" oninput="searchTransaction()">
                     </div>
                 </div>
@@ -141,7 +141,7 @@ if(isset($_SESSION["logged_in"])){
                                         <th scope="col" class="text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody id="appointment-table-body" class="table-group-divider">
+                                <tbody id="transaction-table-body" class="table-group-divider">
                                 <?php
                                     // Query the database to fetch user data
                                     $result = $connection->query("SELECT * FROM trans ORDER BY transid DESC");
@@ -162,7 +162,7 @@ if(isset($_SESSION["logged_in"])){
                                             echo '<td>';
                                             echo '<div class="d-flex justify-content-center">';
                                             echo '<button class="btn btn-success me-2" onclick="addDetails(' . $row['transid'] . ')">Add Services</button>';
-                                            echo '<button class="btn btn-primary me-2" onclick="editAppointment(' . $row['transid'] . ')">Edit</button>';
+                                            echo '<button class="btn btn-primary me-2" onclick="editTransaction(' . $row['transid'] . ')">Edit</button>';
                                             echo '<button class="btn btn-danger" onclick="openDeleteModal(' . $row['transid'] .')">Delete</button>';
                                             echo '</div>';
                                             echo '</td>';
@@ -263,8 +263,13 @@ if(isset($_SESSION["logged_in"])){
             toast.show();
         }
 
-        //---------------------------Edit Appointment---------------------------//
-        function editAppointment(transid) {
+        //---------------------------Add Transactions Details ---------------------------//
+        function addDetails(transid) {
+            window.location = "adminaddtransdetails.php?transid=" + transid;
+        }
+
+        //---------------------------Edit Transaction---------------------------//
+        function editTransaction(transid) {
             window.location = "adminedittransaction.php?transid=" + transid;
         }
 

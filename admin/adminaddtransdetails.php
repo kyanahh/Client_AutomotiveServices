@@ -8,6 +8,7 @@ if(isset($_SESSION["logged_in"])){
     if(isset($_SESSION["firstname"]) || isset($_SESSION["email"])){
         $textaccount = $_SESSION["firstname"];
         $useremail = $_SESSION["email"];
+        $staffid = $_SESSION["userid"];
     }else{
         $textaccount = "Account";
     }
@@ -15,13 +16,16 @@ if(isset($_SESSION["logged_in"])){
     $textaccount = "Account";
 }
 
-// Validate and fetch appointment details
+$amount = $descrip = $qty = "";
+
+// Validate and fetch transaction details
 if (isset($_GET['transid']) && is_numeric($_GET['transid'])) {
     $transid = intval($_GET['transid']);
 
     // Fetch the appointment details
     $stmt = $connection->prepare(
-        "SELECT * FROM trans
+        "SELECT transid 
+        FROM trans 
         WHERE transid = ?"
     );
     $stmt->bind_param("i", $transid);
@@ -31,13 +35,6 @@ if (isset($_GET['transid']) && is_numeric($_GET['transid'])) {
     if ($result->num_rows > 0) {
         $transaction = $result->fetch_assoc();
         $transid = $transaction['transid'];
-        $appid = $transaction['appid'];
-        $platenum = $transaction['platenum'];
-        $staffid = $transaction['staffid'];
-        $total_amount = $transaction['total_amount'];
-        $remarks = $transaction['remarks'];
-        $transdate = $transaction['transdate'];
-
     } else {
         echo "No transaction found!";
         exit;
@@ -47,26 +44,86 @@ if (isset($_GET['transid']) && is_numeric($_GET['transid'])) {
     exit;
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+// Fetch services data for the select input
+$servicesOptions = "";
 
-    $newplatenum = $_POST['platenum'];
-    $newremarks = $_POST['remarks'];
+$stmtServices = $connection->prepare("SELECT serviceid, servicetype FROM services");
+$stmtServices->execute();
+$resultServices = $stmtServices->get_result();
 
-    // Update the appointment in the database
-    $updateStmt = $connection->prepare(
-        "UPDATE trans SET platenum = ?, remarks = ? WHERE transid = ?"
-    );
-    $updateStmt->bind_param("ssi", $newplatenum, $newremarks, $transid);
-
-    if ($updateStmt->execute()) {
-        // Redirect with a success message
-        header("Location: admintransactions.php?message=Transaction updated successfully!");
-        exit;
-    } else {
-        echo "Error updating appointment: " . $connection->error;
+if ($resultServices->num_rows > 0) {
+    while ($row = $resultServices->fetch_assoc()) {
+        $servicesOptions .= "<option value='" . $row['serviceid'] . "'>" . htmlspecialchars($row['servicetype']) . "</option>";
     }
-    
+} else {
+    $servicesOptions = "<option value='' disabled>No services available</option>";
 }
+
+$stmtServices->close();
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $currentDateTime = new DateTime();
+
+    $amount = $_POST["amount"];
+    $descrip = $_POST["descrip"];
+    $serviceid = intval($_POST["serviceid"]); // Get the selected service ID
+    $qty = 1; // Assuming quantity is fixed or you can make it dynamic
+
+    // Check if the transaction exists
+    $stmtCheckUser = $connection->prepare("SELECT COUNT(*) FROM trans WHERE transid = ?");
+    $stmtCheckUser->bind_param("i", $transid);
+    $stmtCheckUser->execute();
+    $stmtCheckUser->bind_result($userCount);
+    $stmtCheckUser->fetch();
+    $stmtCheckUser->close();
+
+    if ($userCount === 0) {
+        $errorMessage = "Transaction does not exist.";
+    } else {
+        // Insert the transaction detail
+        $stmt = $connection->prepare("INSERT INTO trans_details (transid, serviceid, amount, qty, descrip, ditsdate, staffid) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+        $formattedDateTime = $currentDateTime->format('Y-m-d H:i:s');
+
+        $stmt->bind_param("iiiissi", $transid, $serviceid, $amount, $qty, $descrip, $formattedDateTime, $staffid);
+
+        if ($stmt->execute()) {
+            // Calculate the total amount
+            $stmtTotal = $connection->prepare("
+                SELECT SUM(amount) AS total 
+                FROM trans_details 
+                WHERE transid = ?");
+            $stmtTotal->bind_param("i", $transid);
+            $stmtTotal->execute();
+            $stmtTotal->bind_result($totalAmount);
+            $stmtTotal->fetch();
+            $stmtTotal->close();
+
+            // Update the total_amount in the trans table
+            $stmtUpdateTrans = $connection->prepare("
+                UPDATE trans 
+                SET total_amount = ? 
+                WHERE transid = ?");
+            $stmtUpdateTrans->bind_param("ii", $totalAmount, $transid);
+
+            if ($stmtUpdateTrans->execute()) {
+                $errorMessage = "Transaction detail and total amount updated successfully!";
+            } else {
+                $errorMessage = "Error updating total amount: " . $stmtUpdateTrans->error;
+            }
+
+            $stmtUpdateTrans->close();
+        } else {
+            $errorMessage = "Error: " . $stmt->error;
+        }
+
+        $stmt->close();
+        header("Location: admintransactions.php");
+        exit();
+    }
+}
+
 
 ?>
 
@@ -166,13 +223,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
             </nav>
 
-            <!-- Edit Transactions -->
+            <!-- Add Transaction Details -->
             <div class="px-3 pt-4">
                         
                 <form method="POST" action="<?php htmlspecialchars("SELF_PHP"); ?>">
 
                     <div class="row ms-2 mt-1">
-                        <h2 class="fs-5">Edit Transaction</h2>
+                        <h2 class="fs-5">Add Transaction Details</h2>
                     </div>
 
                     <div class="ms-2 col-sm-8">
@@ -187,7 +244,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             }
                         ?>
                     </div>
-
+                    
                     <div class="row mb-3 ms-2 mt-2">
                         <div class="col-sm-2">
                             <label class="form-label mt-2 px-3">Transaction ID</label>
@@ -196,22 +253,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             <input type="text" class="form-control" name="transid" id="transid" value="<?php echo $transid; ?>" disabled>
                         </div>
                     </div>
-                    
+
                     <div class="row mb-3 ms-2 mt-2">
                         <div class="col-sm-2">
-                            <label class="form-label mt-2 px-3">Application ID</label>
+                            <label class="form-label mt-2 px-3">Service Type</label>
                         </div>
                         <div class="col-sm-6">
-                            <input type="text" class="form-control" name="appid" id="appid" value="<?php echo $appid; ?>" disabled>
+                            <select id="servicetype" name="serviceid" class="form-select" required>
+                            <option value="" disabled selected>Select Service Type</option>
+                                <?php echo $servicesOptions; ?>
+                            </select>
                         </div>
                     </div>
 
                     <div class="row mb-3 ms-2 mt-2">
                         <div class="col-sm-2">
-                            <label class="form-label mt-2 px-3">Plate Number</label>
+                            <label class="form-label mt-2 px-3">Quantity</label>
                         </div>
                         <div class="col-sm-6">
-                            <input type="text" id="platenum" class="form-control" name="platenum" value="<?php echo $platenum ?>" placeholder="Enter Plate Number" required>
+                            <input type="text" id="qty" class="form-control" name="qty" value="<?php echo $qty ?>" placeholder="Enter quantity" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 ms-2 mt-2">
+                        <div class="col-sm-2">
+                            <label class="form-label mt-2 px-3">Amount</label>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" id="amount" class="form-control" name="amount" value="<?php echo $amount ?>" placeholder="Enter amount" required>
                         </div>
                     </div>
 
@@ -226,28 +295,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     <div class="row mb-3 ms-2 mt-2">
                         <div class="col-sm-2">
-                            <label class="form-label mt-2 px-3">Total Amount</label>
+                            <label class="form-label mt-2 px-3">Description</label>
                         </div>
                         <div class="col-sm-6">
-                            <input type="text" id="total_amount" class="form-control" name="pltotal_amountatenum" value="<?php echo $total_amount ?>" disabled>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3 ms-2 mt-2">
-                        <div class="col-sm-2">
-                            <label class="form-label mt-2 px-3">Remarks</label>
-                        </div>
-                        <div class="col-sm-6">
-                            <textarea class="form-control" id="remarks" name="remarks" rows="3" value="<?php echo $remarks ?>"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3 ms-2 mt-2">
-                        <div class="col-sm-2">
-                            <label class="form-label mt-2 px-3">Transaction Date</label>
-                        </div>
-                        <div class="col-sm-6">
-                            <input type="text" id="transdate" class="form-control" name="transdate" value="<?php echo $transdate ?>" disabled>
+                            <textarea class="form-control" id="descrip" name="descrip" placeholder="Enter Description" rows="3" value="<?php echo $descrip ?>"></textarea>
                         </div>
                     </div>
 
@@ -257,13 +308,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </div>
                         <div class="col-sm-6">
                             <button type="submit" class="btn btn-dark col-sm-12">Save</button>
-                            <a href="admintransactions.php" class="btn btn-danger col-sm-12 mt-1">Cancel</a>
                         </div>
                     </div>
                 </form>
 
             </div>
-            <!-- End of Edit Transactions -->
+            <!-- End of Add Transaction Details -->
 
         </div>
     
