@@ -60,6 +60,12 @@ if(isset($_SESSION["logged_in"])){
                 </li>
 
                 <li>
+                    <a href="adminservices.php" class="text-decoration-none px-3 py-2 d-block">
+                    <i class="bi bi-gear me-2"></i>Services
+                    </a>
+                </li>
+
+                <li>
                     <a href="adminappointments.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-calendar-check me-2"></i>Appointments
                     </a>
@@ -68,6 +74,12 @@ if(isset($_SESSION["logged_in"])){
                 <li>
                     <a href="admintransactions.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-file-earmark-text me-2"></i>Transactions
+                    </a>
+                </li>
+
+                <li>
+                    <a href="admintransactiondetails.php" class="text-decoration-none px-3 py-2 d-block">
+                    <i class="bi bi-card-list me-2"></i>Transactions Details
                     </a>
                 </li>
 

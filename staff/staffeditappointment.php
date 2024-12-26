@@ -129,32 +129,50 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <ul class="list-unstyled px-2">
 
                 <li>
-                    <a href="staffindex.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="adminindex.php" class="text-decoration-none px-3 py-2 d-block">
                         <i class="fal fa-home me-2"></i>Dashboard
                     </a>
                 </li>
 
                 <li>
-                    <a href="staffusers.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="adminusers.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-person-square me-2"></i>Users
                     </a>
                 </li>
 
                 <li>
-                    <a href="staffchats.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="adminchats.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-chat-text me-2"></i>Chats
                     </a>
                 </li>
 
                 <li>
-                    <a href="staffappointments.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="adminservices.php" class="text-decoration-none px-3 py-2 d-block">
+                    <i class="bi bi-gear me-2"></i>Services
+                    </a>
+                </li>
+
+                <li>
+                    <a href="adminappointments.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-calendar-check me-2"></i>Appointments
                     </a>
                 </li>
 
                 <li>
-                    <a href="stafftransactions.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="admintransactions.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-file-earmark-text me-2"></i>Transactions
+                    </a>
+                </li>
+
+                <li>
+                    <a href="admintransactiondetails.php" class="text-decoration-none px-3 py-2 d-block">
+                    <i class="bi bi-card-list me-2"></i>Transactions Details
+                    </a>
+                </li>
+
+                <li>
+                    <a href="adminuserlogs.php" class="text-decoration-none px-3 py-2 d-block">
+                    <i class="bi bi-journal me-2"></i>User Logs
                     </a>
                 </li>
 
