@@ -69,7 +69,7 @@ $stmtServices->close();
 
 // Code for saving
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $serviceid = $_POST['serviceid'];
+    $serviceid = intval($_POST["serviceid"]); // Get the selected service ID
     $amount = $_POST['amount'];
     $descrip = $_POST['remarks'];
     $qty = $_POST['qty'];

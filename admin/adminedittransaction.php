@@ -49,8 +49,9 @@ if (isset($_GET['transid']) && is_numeric($_GET['transid'])) {
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $newplatenum = $_POST['platenum'];
-    $newremarks = $_POST['remarks'];
+    $amount = $_POST["amount"];
+    $descrip = $_POST["descrip"];
+    $serviceid = intval($_POST["serviceid"]); // Get the selected service ID
 
     // Update the appointment in the database
     $updateStmt = $connection->prepare(
