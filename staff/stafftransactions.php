@@ -199,7 +199,7 @@ if(isset($_SESSION["logged_in"])){
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        /---------------------------Search Transactions---------------------------//
+        //---------------------------Search Transactions---------------------------//
         document.addEventListener("DOMContentLoaded", function () {
             function searchAppointment() {
                 const query = document.getElementById("searchTransactionInput").value;
