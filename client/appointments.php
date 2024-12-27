@@ -78,7 +78,7 @@ if(isset($_SESSION["logged_in"])){
             </div>
             <input type="text" class="form-control" id="searchAppointmentInput" placeholder="Search" aria-describedby="button-addon2" oninput="searchAppointment()">
             
-            <div class="table-responsive" style="height: 320px;">
+            <div class="table-responsive" style="height: 420px;">
                 <table class="table">
                     <thead class="bg-light" style="position: sticky; top: 0;">
                         <tr>

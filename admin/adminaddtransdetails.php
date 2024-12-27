@@ -271,7 +271,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <label class="form-label mt-2 px-3">Quantity</label>
                         </div>
                         <div class="col-sm-6">
-                            <input type="text" id="qty" class="form-control" name="qty" value="<?php echo $qty ?>" placeholder="Enter quantity" required>
+                            <input type="number" id="qty" class="form-control" name="qty" value="<?php echo $qty ?>" placeholder="Enter quantity" required>
                         </div>
                     </div>
 
@@ -280,7 +280,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <label class="form-label mt-2 px-3">Amount</label>
                         </div>
                         <div class="col-sm-6">
-                            <input type="text" id="amount" class="form-control" name="amount" value="<?php echo $amount ?>" placeholder="Enter amount" required>
+                            <input type="number" id="amount" class="form-control" name="amount" value="<?php echo $amount ?>" placeholder="Enter amount" required>
                         </div>
                     </div>
 

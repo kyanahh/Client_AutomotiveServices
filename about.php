@@ -2,17 +2,7 @@
 
 session_start();
 
-require("../server/connection.php");
-
-if(isset($_SESSION["logged_in"])){
-    if(isset($_SESSION["firstname"])){
-        $textaccount = $_SESSION["firstname"];
-    }else{
-        $textaccount = "Account";
-    }
-}else{
-    $textaccount = "Account";
-}
+require("server/connection.php");
 
 // Fetch ratings from the database
 $sql = "SELECT AVG(rating_value) AS average_rating, COUNT(*) AS total_reviews FROM rating";
@@ -63,46 +53,34 @@ $reviews_result = $connection->query($reviews_sql);
 <body>
     <nav class="navbar navbar-expand-lg py-4 bg-dark">
         <div class="container-fluid">
-          <a class="navbar-brand ps-5 text-white fw-bold" href="clientindex.php">N.M.A. AUTOMOTIVE SUSPENSION SERVICES CENTER</a>
+          <a class="navbar-brand ps-5 text-white fw-bold" href="home.html">NMA Automotive Suspension Service Center</a>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
           <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto grid gap-3">
               <li class="nav-item me-3">
-                <a class="nav-link text-white fw-bold" href="clientindex.php">HOME</a>
+                <a class="nav-link text-white fw-bold" href="home.html">HOME</a>
               </li>
               <li class="nav-item me-3">
                 <a class="nav-link text-white fw-bold" href="about.php">ABOUT</a>
               </li>
               <li class="nav-item me-3">
-                <a class="nav-link text-white fw-bold" href="contactus.php">CONTACT US</a>
+                <a class="nav-link text-white fw-bold" href="contactus.html">CONTACT US</a>
               </li>
               <li class="nav-item me-5">
-                <div class="dropdown-center">
-                    <button class="btn btn-light dropdown-toggle px-4" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Account
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="appointments.php">Appointments</a></li>
-                        <li><a class="dropdown-item" href="transactions.php">Transactions</a></li>
-                        <li><a class="dropdown-item" href="settings.php">Account <br> Management</a></li>
-                        <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item">Hello, <?php echo $textaccount?></a></li>
-                    </ul>
-                </div>
+                <a class="nav-link px-3 fw-bold btn btn-white bg-white" href="login.php">LOGIN</a>
               </li>
             </ul>
           </div>
         </div>
       </nav>
 
-      <div class="container-fluid my-5 pt-3 d-flex justify-content-center">
+      <div class="container-fluid mt-5 pt-3 d-flex justify-content-center">
         <div class="card col-sm-8 p-4">
             <h5>About NMA Automotive Suspension Service Center</h5>
             <div class="d-flex justify-content-center mt-3">
-                <img class="w-25" src="../img/owner.jpg" alt="Owner">
+                <img class="w-25" src="img/owner.jpg" alt="Owner">
             </div>
             <p class="mt-3">NMA Automotive Suspension Service Center was founded by Nelson M. Alimurong and has been a trusted name in automotive care since March 1, 1995—the same day the city of Muntinlupa celebrated its transition to municipal status. With nearly three decades of experience, we take pride in being specialists in automotive suspension systems, focusing on the repair and replacement of underchassis parts.</p>
             <p class="mt-3">Our expertise covers a wide range of suspension-related services, ensuring that each vehicle we service performs optimally and safely on the road. At NMA Automotive Suspension Service Center, we are dedicated to providing top-tier solutions that improve ride comfort, vehicle stability, and overall driving performance.</p>
@@ -162,12 +140,22 @@ $reviews_result = $connection->query($reviews_sql);
                     <?php endif; ?>
                 </div>
             </div>
-            
+
         </div>
       </div>
 
+    <hr class="mt-5">
+    <footer>
+        <div class="container-fluid row m-2">
+
+            <div class="col-md-6">
+                <p>Copyright &copy; 2024 NMA Automotive Suspension Service Center</p>
+            </div>
+
+        </div>
+    </footer>
+
     <!-- Script -->  
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    
 </body>
 </html>

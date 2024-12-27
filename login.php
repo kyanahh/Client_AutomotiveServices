@@ -72,7 +72,7 @@ if (isset($_POST["email"]) && isset($_POST["password"])) {
                 <a class="nav-link text-white fw-bold" href="home.html">HOME</a>
               </li>
               <li class="nav-item me-3">
-                <a class="nav-link text-white fw-bold" href="about.html">ABOUT</a>
+                <a class="nav-link text-white fw-bold" href="about.php">ABOUT</a>
               </li>
               <li class="nav-item me-3">
                 <a class="nav-link text-white fw-bold" href="contactus.html">CONTACT US</a>
