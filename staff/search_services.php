@@ -26,7 +26,6 @@ if (isset($_POST['query'])) {
             echo '<td>';
             echo '<div class="d-flex justify-content-center">';
             echo '<button class="btn btn-primary me-2" onclick="editService(' . $row['serviceid'] . ')">Edit</button>';
-            echo '<button class="btn btn-danger" onclick="deleteService(' . $row['serviceid'] . ')">Delete</button>';
             echo '</div>';
             echo '</td>';
             echo '</tr>';
