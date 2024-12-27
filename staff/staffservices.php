@@ -107,6 +107,157 @@ if(isset($_SESSION["logged_in"])){
                 </div>
             </nav>
 
+            <!-- List of Services -->
+            <div class="px-3">
+                <div class="row">
+                    <div class="col-sm-1">
+                        <h2 class="fs-5 mt-1 ms-2">Sevices</h2>
+                    </div>
+                    <div class="col input-group mb-3">
+                        <input type="text" class="form-control" id="searchServiceInput" placeholder="Search" aria-describedby="button-addon2" oninput="searchService()">
+                    </div>
+                    <div class="col-sm-1">
+                        <button class="btn btn-dark px-4" data-bs-toggle="modal" data-bs-target="#addServiceModal"><i class="bi bi-plus-lg text-white"></i></button>
+                    </div>
+                </div>
+                
+                <div class="card" style="height: 520px;">
+                    <div class="card-body">
+                        <div class="table-responsive" style="height: 480px;">
+                            <table id="service-table" class="table table-bordered table-hover">
+                                <thead class="table-light" style="position: sticky; top: 0;">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Service ID</th>
+                                        <th scope="col">Service Type</th>
+                                        <th scope="col" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="table-group-divider">
+                                <?php
+                                    // Query the database to fetch user data
+                                    $result = $connection->query("SELECT * FROM services ORDER BY serviceid DESC");
+
+                                    if ($result->num_rows > 0) {
+                                        $count = 1; 
+
+                                        while ($row = $result->fetch_assoc()) {
+                                            echo '<tr>';
+                                            echo '<td>' . $count . '</td>';
+                                            echo '<td>' . $row['serviceid'] . '</td>';
+                                            echo '<td>' . $row['servicetype'] . '</td>';
+                                            echo '<td>';
+                                            echo '<div class="d-flex justify-content-center">';
+                                            echo '<button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editServiceModal" onclick="loadServiceData(' . $row['serviceid'] . ')">Edit</button>';
+                                            echo '</div>';
+                                            echo '</td>';
+                                            echo '</tr>';
+                                            $count++; 
+                                        }
+                                    } else {
+                                        echo '<tr><td colspan="5">No services found.</td></tr>';
+                                    }
+                                ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                    <!-- Search results will be displayed here -->
+                <div id="search-results"></div>
+            </div>
+            <!-- End of List of Services -->
+
+            <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container">
+                <div id="deleteToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <strong class="me-auto">Notification</strong>
+                        <small>Just now</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        User deleted successfully.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete this service?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Service Modal -->
+            <div class="modal fade" id="addServiceModal" tabindex="-1" aria-labelledby="addServiceModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addServiceModalLabel">Add New Service</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="addServiceForm">
+                                <div class="mb-3">
+                                    <label for="serviceTypeInput" class="form-label">Service Type</label>
+                                    <input type="text" class="form-control" id="serviceTypeInput" name="servicetype" placeholder="Enter service type" required>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" id="saveServiceButton">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast Notification -->
+            <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                <div id="dynamicToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div id="toastBody" class="toast-body">
+                            <!-- Message will be injected here -->
+                        </div>
+                        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Service Modal -->
+            <div class="modal fade" id="editServiceModal" tabindex="-1" aria-labelledby="editServiceModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editServiceModalLabel">Edit Service</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="editServiceForm">
+                                <input type="hidden" id="editServiceId" name="serviceid">
+                                <div class="mb-3">
+                                    <label for="editServiceType" class="form-label">Service Type</label>
+                                    <input type="text" class="form-control" id="editServiceType" name="servicetype" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     
     </div>
@@ -116,6 +267,141 @@ if(isset($_SESSION["logged_in"])){
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        //--------------------------- Dynamic Toast Notification ---------------------------//
+        function showDynamicToast(message, type) {
+                const toastElement = document.getElementById('dynamicToast');
+                const toastBody = document.getElementById('toastBody');
+
+                // Set the message
+                toastBody.textContent = message;
+
+                // Set the type (e.g., success, error)
+                toastElement.className = `toast align-items-center border-0 text-bg-${type}`;
+
+                // Show the toast
+                const toast = new bootstrap.Toast(toastElement);
+                toast.show();
+            }
+
+            //--------------------------- Edit Service ---------------------------//
+            // Load service data into the modal
+            function loadServiceData(serviceid) {
+                $.ajax({
+                    url: 'get_service.php',
+                    type: 'POST',
+                    data: { serviceid: serviceid },
+                    success: function (response) {
+                        const result = JSON.parse(response);
+
+                        if (result.success) {
+                            $('#editServiceId').val(result.data.serviceid);
+                            $('#editServiceType').val(result.data.servicetype);
+                        } else {
+                            showDynamicToast('Error fetching service data: ' + result.message, 'danger');
+                        }
+                    },
+                    error: function () {
+                        showDynamicToast('An error occurred while fetching the service data.', 'danger');
+                    },
+                });
+            }
+
+            // Handle the form submission for editing a service
+            $('#editServiceForm').on('submit', function (e) {
+                e.preventDefault();
+
+                const serviceId = $('#editServiceId').val();
+                const serviceType = $('#editServiceType').val();
+
+                $.ajax({
+                    url: 'update_service.php',
+                    type: 'POST',
+                    data: { serviceid: serviceId, servicetype: serviceType },
+                    success: function (response) {
+                        const result = JSON.parse(response);
+
+                        if (result.success) {
+                            $('#editServiceModal').modal('hide');
+                            showDynamicToast('Service updated successfully!', 'success');
+
+                            // Optionally reload the page after a short delay
+                            setTimeout(() => location.reload(), 2000);
+                        } else {
+                            showDynamicToast('Error updating service: ' + result.message, 'danger');
+                        }
+                    },
+                    error: function () {
+                        showDynamicToast('An error occurred while updating the service.', 'danger');
+                    },
+                });
+            });
+
+        //---------------------------Search Services Results---------------------------//
+        function searchService() {
+            const query = document.getElementById("searchServiceInput").value;
+
+            // Make an AJAX request to fetch search results
+            $.ajax({
+                url: 'search_services.php', // Replace with the actual URL to your search script
+                method: 'POST',
+                data: { query: query },
+                success: function(data) {
+                    // Update the user-table with the search results
+                    $('#service-table tbody').html(data);
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error during search request:", error);
+                }
+            });
+        }
+
+        //--------------------------- Add Service ---------------------------//
+        $(document).ready(function () {
+            $('#saveServiceButton').on('click', function () {
+                const serviceType = $('#serviceTypeInput').val();
+
+                if (serviceType.trim() === '') {
+                    showDynamicToast('Please enter a service type.', 'warning');
+                    return;
+                }
+
+                // Send data to the server
+                $.ajax({
+                    url: 'add_service.php',
+                    type: 'POST',
+                    data: { servicetype: serviceType },
+                    success: function (response) {
+                        const result = JSON.parse(response);
+
+                        if (result.success) {
+                            showDynamicToast('Service added successfully!', 'success');
+                            setTimeout(() => location.reload(), 2000);
+                        } else {
+                            showDynamicToast('Error adding service: ' + result.message, 'danger');
+                        }
+                    },
+                    error: function () {
+                        showDynamicToast('An error occurred while adding the service.', 'danger');
+                    },
+                });
+            });
+        });
+
+
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check if the session has the update success flag set
+            <?php if (isset($_SESSION['update_success'])): ?>
+                var updateToast = new bootstrap.Toast(document.getElementById('updateToast'));
+                updateToast.show();
+                <?php unset($_SESSION['update_success']); // Clear the session variable after showing the toast ?>
+            <?php endif; ?>
+        });
+    </script>
 
 </body>
 </html>
