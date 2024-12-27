@@ -42,50 +42,44 @@ if(isset($_SESSION["logged_in"])){
             <ul class="list-unstyled px-2">
 
                 <li>
-                    <a href="adminindex.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffindex.php" class="text-decoration-none px-3 py-2 d-block">
                         <i class="fal fa-home me-2"></i>Dashboard
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminusers.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffusers.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-person-square me-2"></i>Users
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminchats.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffchats.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-chat-text me-2"></i>Chats
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminservices.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffservices.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-gear me-2"></i>Services
                     </a>
                 </li>
 
                 <li>
-                    <a href="adminappointments.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="staffappointments.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-calendar-check me-2"></i>Appointments
                     </a>
                 </li>
 
                 <li>
-                    <a href="admintransactions.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="stafftransactions.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-file-earmark-text me-2"></i>Transactions
                     </a>
                 </li>
 
                 <li>
-                    <a href="admintransactiondetails.php" class="text-decoration-none px-3 py-2 d-block">
+                    <a href="stafftransactiondetails.php" class="text-decoration-none px-3 py-2 d-block">
                     <i class="bi bi-card-list me-2"></i>Transactions Details
-                    </a>
-                </li>
-
-                <li>
-                    <a href="adminuserlogs.php" class="text-decoration-none px-3 py-2 d-block">
-                    <i class="bi bi-journal me-2"></i>User Logs
                     </a>
                 </li>
 
@@ -129,7 +123,7 @@ if(isset($_SESSION["logged_in"])){
                 
                 <div class="card" style="height: 500px;">
                     <div class="card-body">
-                        <div class="table-responsive" style="height: 420px;">
+                        <div class="table-responsive" style="height: 460px;">
                             <table id="appointment-table" class="table table-bordered table-hover">
                                 <thead class="table-light" style="position: sticky; top: 0;">
                                     <tr>
