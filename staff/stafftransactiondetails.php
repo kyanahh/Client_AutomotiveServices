@@ -203,7 +203,7 @@ if(isset($_SESSION["logged_in"])){
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        /---------------------------Search Details---------------------------//
+        //---------------------------Search Details---------------------------//
         document.addEventListener("DOMContentLoaded", function () {
             function searchDetail() {
                 const query = document.getElementById("searchDetailInput").value;

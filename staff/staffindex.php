@@ -15,6 +15,41 @@ if(isset($_SESSION["logged_in"])){
     $textaccount = "Account";
 }
 
+// Number of customers
+$customer_query = "SELECT COUNT(*) AS total_customers FROM users WHERE usertypeid IN (3, 4)";
+$customer_result = $connection->query($customer_query);
+$total_customers = $customer_result->fetch_assoc()['total_customers'];
+
+// Appointment statistics
+$appointment_query = "SELECT 
+    SUM(statsid = 1) AS pending,
+    SUM(statsid = 2) AS ongoing,
+    SUM(statsid = 3) AS cancelled,
+    SUM(statsid = 4) AS done,
+    SUM(statsid = 5) AS confirmed,
+    COUNT(*) AS total_appointments
+FROM appointments";
+$appointment_result = $connection->query($appointment_query);
+$appointments = $appointment_result->fetch_assoc();
+
+// Transaction statistics
+$transaction_query = "SELECT 
+    COUNT(*) AS total_transactions, 
+    SUM(total_amount) AS total_sales 
+FROM trans";
+$transaction_result = $connection->query($transaction_query);
+$transactions = $transaction_result->fetch_assoc();
+
+// Sales per month
+$sales_month_query = "SELECT DATE_FORMAT(transdate, '%Y-%m') AS month, SUM(total_amount) AS sales 
+FROM trans GROUP BY month ORDER BY month";
+$sales_month_result = $connection->query($sales_month_query);
+
+$sales_per_month = [];
+while ($row = $sales_month_result->fetch_assoc()) {
+    $sales_per_month[] = $row;
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -107,8 +142,51 @@ if(isset($_SESSION["logged_in"])){
                 </div>
             </nav>
 
+            <div class="container px-5 pb-5 pt-3">
+                <h3>Dashboard Statistics</h3>
+                <div class="row">
+                    
+                    <!-- General Statistics -->
+                    <div class="col-md-3">
+                        <div class="card p-3">
+                            <h5>Total Customers</h5>
+                            <p><?php echo $total_customers; ?></p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card p-3">
+                            <h5>Total Appointments</h5>
+                            <p><?php echo $appointments['total_appointments']; ?></p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card p-3">
+                            <h5>Total Transactions</h5>
+                            <p><?php echo $transactions['total_transactions']; ?></p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card p-3">
+                            <h5>Total Sales</h5>
+                            <p>₱<?php echo number_format($transactions['total_sales'], 2); ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="row mt-5">
+                    <div class="col-md-6">
+                        <canvas id="appointmentsChart"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
-    
+
     </div>
 
     <!-- Script -->  
@@ -116,6 +194,49 @@ if(isset($_SESSION["logged_in"])){
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Pass PHP data to JavaScript
+        const appointmentsData = <?php echo json_encode($appointments); ?>;
+        const salesData = <?php echo json_encode($sales_per_month); ?>;
+
+        // Appointments Chart
+        const ctx1 = document.getElementById('appointmentsChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Ongoing', 'Cancelled', 'Done', 'Confirmed'],
+                datasets: [{
+                    label: 'Appointments',
+                    data: [
+                        appointmentsData.pending,
+                        appointmentsData.ongoing,
+                        appointmentsData.cancelled,
+                        appointmentsData.done,
+                        appointmentsData.confirmed
+                    ],
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4CAF50', '#FF5722'],
+                }]
+            }
+        });
+
+        // Sales Chart
+        const ctx2 = document.getElementById('salesChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: salesData.map(item => item.month),
+                datasets: [{
+                    label: 'Sales per Month',
+                    data: salesData.map(item => item.sales),
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            }
+        });
+    </script>
 
 </body>
 </html>

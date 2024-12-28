@@ -134,6 +134,24 @@ $transid = isset($_GET['transid']) ? intval($_GET['transid']) : 0;
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
+        
+        function searchDetail() {
+            const query = document.getElementById("searchDetailInput").value;
+            const transid = <?php echo $transid; ?>; // Pass transid from PHP to JavaScript
+
+            $.ajax({
+                url: 'search_details.php',
+                method: 'POST',
+                data: { query: query, transid: transid }, // Include transid in POST data
+                success: function (data) {
+                    console.log(data); // Debugging log
+                    $('#detail-table-body').html(data);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Search request failed:', error);
+                }
+            });
+        }
 
     </script>
 
