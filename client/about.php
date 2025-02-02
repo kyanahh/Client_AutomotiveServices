@@ -84,6 +84,7 @@ $reviews_result = $connection->query($reviews_sql);
                         Account
                     </button>
                     <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="chats.php">Chats</a></li>
                         <li><a class="dropdown-item" href="appointments.php">Appointments</a></li>
                         <li><a class="dropdown-item" href="transactions.php">Transactions</a></li>
                         <li><a class="dropdown-item" href="settings.php">Account <br> Management</a></li>

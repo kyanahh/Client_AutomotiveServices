@@ -14,6 +14,24 @@ if(isset($_SESSION["logged_in"])){
     $textaccount = "Account";
 }
 
+$clientid = $_SESSION["userid"];
+
+// Check if the client already has an open conversation
+$query = "SELECT conversationid FROM conversations WHERE clientid = $clientid AND status = 'open' LIMIT 1";
+$result = mysqli_query($connection, $query);
+
+if ($row = mysqli_fetch_assoc($result)) {
+    $conversationid = $row["conversationid"];
+} else {
+    // Start a new conversation if none exists
+    $query = "INSERT INTO conversations (clientid) VALUES ($clientid)";
+    if (mysqli_query($connection, $query)) {
+        $conversationid = mysqli_insert_id($connection);
+    } else {
+        die("Error creating conversation: " . mysqli_error($connection)); // Debugging
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -64,52 +82,69 @@ if(isset($_SESSION["logged_in"])){
         </div>
       </nav>
 
-      <div id="homepagecarousel" class="carousel slide align-items-center" data-bs-ride="carousel">
-        <div class="carousel-indicators">
-            <button type="button" data-bs-target="#homepagecarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-            <button type="button" data-bs-target="#homepagecarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-            <button type="button" data-bs-target="#homepagecarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+      <!-- MAIN -->
+      <div class="container my-4">
+            <div class="card">
+                <div class="card-header bg-dark text-white">Chat with N.M.A.</div>
+                <div class="card-body" id="chat-box" style="height: 400px; overflow-y: auto;">
+                    <!-- Messages will be loaded here -->
+                </div>
+                <div class="card-footer">
+                    <div class="input-group">
+                        <input type="text" id="message" class="form-control" placeholder="Type your message...">
+                        <button class="btn btn-dark" id="send">Send</button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="carousel-inner">
-          <div class="carousel-item active c-item">
-            <img src="../img/fixing0.png" class="d-block c-img" alt="NMA" style="height: 85vh; background-size: cover;
-            width: 100%;">
-            <div class="carousel-caption top-0 mt-5">
-                <p class="fs-4 text-uppercase pt-5">Need reliable automotive services?</p>
-                <h1 class="display-5 fw-bolder text-capitalize mt-5">N.M.A. AUTOMOTIVE SUSPENSION SERVICES CENTER</h1>
-                <a href="signup.php" class="btn btn-light fw-bold mx-auto fs-5 px-4 py-2 mt-5">Book Now</a>
-            </div>
-          </div>
-          <div class="carousel-item c-item">
-            <img src="../img/things.png" class="d-block c-img" alt="NMA" style="height: 85vh; background-size: cover;
-            width: 100%;">
-            <div class="carousel-caption top-0 mt-5">
-                <p class="fs-4 text-uppercase pt-5">Want your car expertly fixed?</p>
-                <h1 class="fw-bold text-capitalize mt-4">Drive with confidence—get your car serviced by the experts today!</h1>
-                <a href="signup.php" class="btn btn-light fw-bold mx-auto fs-5 px-4 py-2 mt-5">Book Now</a>
-            </div>
-          </div>
-          <div class="carousel-item c-item">
-            <img src="../img/shop.png" class="d-block c-img" alt="NMA" style="height: 85vh; background-size: cover;
-            width: 100%;">
-            <div class="carousel-caption top-0 mt-5 pt-5">
-                <p class="fs-4 text-uppercase pt-5">8am to 5pm</p>
-                <h1 class="display-4 fw-bold text-capitalize mt-4">Monday to Saturday</h1>
-                <a href="signup.php" class="btn btn-light fw-bold mx-auto fs-5 px-4 py-2 mt-5">Book Now</a>
-            </div>
-          </div>
-        </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#homepagecarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
-          </button>
-          <button class="carousel-control-next" type="button" data-bs-target="#homepagecarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
-        </button>
-    </div>
 
     <!-- Script -->  
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        var conversationId = <?php echo json_encode($conversationid); ?>;
+        var clientId = <?php echo json_encode($clientid); ?>;
+
+        function loadMessages() {
+            $.ajax({
+                url: "chatload_messages.php",
+                type: "POST",
+                data: { conversationid: conversationId },
+                success: function (data) {
+                    $("#chat-box").html(data);
+                    $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error loading messages:", xhr.responseText);
+                }
+            });
+        }
+
+        $("#send").click(function () {
+            var message = $("#message").val();
+            if (message.trim() !== "") {
+                $.ajax({
+                    url: "chatsend_message.php",
+                    type: "POST",
+                    data: {
+                        conversationid: conversationId,
+                        senderid: clientId,
+                        message: message
+                    },
+                    success: function () {
+                        $("#message").val("");
+                        loadMessages();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error sending message:", xhr.responseText);
+                    }
+                });
+            }
+        });
+
+        setInterval(loadMessages, 2000);
+        loadMessages();
+    </script>
+
 </body>
 </html>

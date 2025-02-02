@@ -4,6 +4,11 @@ session_start();
 
 require("../server/connection.php");   
 
+// Start setting the admin ID here
+if (isset($_SESSION['userid'])) {
+    $admin_id = $_SESSION['userid'];
+}
+
 if(isset($_SESSION["logged_in"])){
     if(isset($_SESSION["firstname"]) || isset($_SESSION["email"])){
         $textaccount = $_SESSION["firstname"];
@@ -13,6 +18,18 @@ if(isset($_SESSION["logged_in"])){
     }
 }else{
     $textaccount = "Account";
+}
+
+// Fetch conversations
+$query = "SELECT c.conversationid, u.firstname, u.lastname 
+          FROM conversations c
+          JOIN users u ON c.clientid = u.userid
+          ORDER BY c.created_at DESC";
+
+$result = mysqli_query($connection, $query);
+
+if (!$result) {
+    die("Query failed: " . mysqli_error($connection)); // Debugging line
 }
 
 ?>
@@ -29,6 +46,39 @@ if(isset($_SESSION["logged_in"])){
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"/>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
 </head>
+<style>
+    .chat-container {
+        display: flex;
+        height: 80vh;
+    }
+    .chat-list {
+        width: 30%;
+        border-right: 1px solid #ddd;
+        overflow-y: auto;
+    }
+    .chat-messages {
+        width: 70%;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+    }
+    .message-box {
+        flex-grow: 1;
+        overflow-y: auto;
+        border-bottom: 1px solid #ddd;
+        padding: 10px;
+    }
+    .chat-input {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .chat-item {
+        cursor: pointer;
+    }
+
+</style>
 <body>
 
     <div class="main-container d-flex">
@@ -108,28 +158,39 @@ if(isset($_SESSION["logged_in"])){
         </div>
 
         <div class="content bg-light">
-            <nav class="navbar navbar-expand-md navbar-dark bg-light">
+            <nav class="navbar navbar-expand-md navbar-dark">
                 <div class="container-fluid">
-                    <div class="d-flex justify-content-between d-md-none d-block">
-                     <button class="btn px-1 py-0 open-btn me-2"><i class="fal fa-stream"></i></button>
-                        <a class="navbar-brand fs-4" href="adminindex.php"><span class="bg-dark rounded px-2 py-0 text-white">CL</span></a>
-                       
-                    </div>
-                    <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                        <i class="fal fa-bars"></i>
-                    </button>
-                    <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
-                        <ul class="navbar-nav mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                <a class="nav-link active my-2" aria-current="page"></a>
-                            </li>
-                        </ul>
-
-                    </div>
                 </div>
             </nav>
+
+            <!-- MAIN -->
+
+            <div class="container mt-4">
+                <h2 class="text-center">Chat</h2>
+                <div class="chat-container">
+                    <!-- Chat List -->
+                    <div class="chat-list p-3">
+                        <h5>Clients</h5>
+                        <ul class="list-group">
+                            <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                                <li class="list-group-item chat-item" data-conversationid="<?= $row['conversationid'] ?>">
+                                    <?= $row['firstname'] . " " . $row['lastname'] ?>
+                                </li>
+                            <?php endwhile; ?>
+                        </ul>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div class="chat-messages">
+                        <div class="message-box" id="message-box"></div>
+                        <div class="chat-input">
+                            <input type="text" id="message-input" class="form-control" placeholder="Type a message...">
+                            <button class="btn btn-primary" id="send-message">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     
     </div>
@@ -139,6 +200,55 @@ if(isset($_SESSION["logged_in"])){
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Ensure admin_id is properly set
+        <?php if (isset($admin_id)): ?>
+            let adminId = <?= json_encode($admin_id) ?>;
+        <?php else: ?>
+            let adminId = null;
+        <?php endif; ?>
+
+        // Your existing JavaScript for chat functionality here
+        let currentConversation = null;
+
+        $(".chat-item").click(function () {
+            currentConversation = $(this).data("conversationid");
+            loadMessages(currentConversation);
+        });
+
+        function loadMessages(conversationId) {
+            $.ajax({
+                url: "adminchatfetch_messages.php",
+                type: "POST",
+                data: { conversationid: conversationId },
+                success: function (data) {
+                    $("#message-box").html(data);
+                }
+            });
+        }
+
+        $("#send-message").click(function () {
+            let message = $("#message-input").val();
+            if (message.trim() !== "" && currentConversation) {
+                $.ajax({
+                    url: "adminchatsend_message.php",
+                    type: "POST",
+                    data: { conversationid: currentConversation, senderid: adminId, message: message },
+                    success: function () {
+                        $("#message-input").val("");
+                        loadMessages(currentConversation);
+                    }
+                });
+            }
+        });
+
+        setInterval(function () {
+            if (currentConversation) {
+                loadMessages(currentConversation);
+            }
+        }, 3000);
+    </script>
 
 </body>
 </html>
